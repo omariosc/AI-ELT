@@ -1,0 +1,70 @@
+cff-version: 1.2.0
+title: 'LASK: A Dataset for Laparoscopic Skill and 7-DoF Kinematics'
+message: >-
+  If you use this dataset, please cite it by its Zenodo DOI, and cite the MIUA
+  2025 paper that introduced it where relevant.
+type: dataset
+authors:
+  - given-names: Omar
+    family-names: Choudhry
+    affiliation: School of Computing, University of Leeds
+    website: 'https://omarchoudhry.co.uk'
+  - given-names: Dominic
+    family-names: Jones
+    affiliation: University of Leeds
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20752650
+    description: Zenodo record for version 1.0
+repository: 'https://doi.org/10.5281/zenodo.20752650'
+repository-code: 'https://github.com/omariosc/LASK'
+url: 'https://doi.org/10.5281/zenodo.20752650'
+abstract: >-
+  LASK (LAparoscopic Skill & Kinematics) is a peg-transfer box-trainer dataset
+  that synchronises endoscopic video with dense ground-truth instrument
+  kinematics and manual instrument annotations for two graspers tracked
+  throughout. It comprises 37 annotated trials arranged as a cross-cohort
+  benchmark: a 7-DoF training set (19 trials), a 7-DoF in-distribution
+  validation set (10 trials) and a 6-DoF out-of-distribution test set (8
+  trials), spanning surgeons from novice to expert. Each trial provides
+  per-frame electromagnetic tool poses across roughly 91,000 frames, with
+  positions in millimetres, orientations as unit quaternions and calibrated jaw
+  angles for the 7-DoF cohorts, time-aligned to the video. Labelled keyframes
+  supply instrument segmentation masks, tooltip and jaw keypoints, shaft-joint
+  keypoints and per-component visibility flags for both instruments, alongside
+  surgeon handedness and procedure experience.
+keywords:
+  - surgical data science
+  - laparoscopic surgery
+  - peg transfer
+  - surgical skill assessment
+  - instrument segmentation
+  - tool detection
+  - tool tracking
+  - pose estimation
+  - surgical video
+  - electromagnetic tracking
+  - computer-assisted intervention
+  - benchmark dataset
+license: CC-BY-4.0
+version: '1.0'
+date-released: '2026-06-18'
+references:
+  - type: conference-paper
+    title: 7-DoF Laparoscopic Peg Transfer Dataset for Surgical Skill Assessment
+    authors:
+      - given-names: Omar
+        family-names: Choudhry
+      - given-names: Sharib
+        family-names: Ali
+      - given-names: Ramanan
+        family-names: Rajasundaram
+      - given-names: Chandra Shekhar
+        family-names: Biyani
+      - given-names: Dominic
+        family-names: Jones
+    collection-title: Medical Image Understanding and Analysis (MIUA)
+    publisher:
+      name: Frontiers Media SA
+    year: 2025
+    doi: 10.3389/978-2-8325-5137-0
