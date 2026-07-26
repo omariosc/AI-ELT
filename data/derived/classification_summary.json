@@ -1,0 +1,197 @@
+{
+  "available": true,
+  "features": [
+    "total_time",
+    "bimanual_correlation",
+    "bimanual_lag_s",
+    "bimanual_concurrent_efficiency",
+    "bimanual_dist_speed_corr",
+    "simultaneous_motion_ratio",
+    "bimanual_symmetry",
+    "combined_idle_ratio",
+    "tool1_normalized_jerk",
+    "tool2_normalized_jerk",
+    "tool1_active_time_ratio",
+    "tool2_active_time_ratio",
+    "tool1_path_length",
+    "tool2_path_length",
+    "tool1_avg_speed",
+    "tool2_avg_speed",
+    "tool_distance_cv",
+    "tool_close_proximity_ratio",
+    "tool1_working_volume",
+    "tool2_working_volume",
+    "tool1_working_area_xy",
+    "tool2_working_area_xy",
+    "tool1_range_z",
+    "tool2_range_z",
+    "tool1_rotation_per_path",
+    "tool2_rotation_per_path",
+    "tool1_angular_velocity_cv",
+    "tool2_angular_velocity_cv",
+    "tool1_num_speed_peaks",
+    "tool2_num_speed_peaks"
+  ],
+  "time_only_features": [
+    "total_time"
+  ],
+  "stratified_group_5fold": {
+    "time_only_logistic_regression": {
+      "mean_balanced_accuracy": 0.44841269841269843,
+      "sd": 0.16861577600976474,
+      "features": [
+        "total_time"
+      ]
+    },
+    "time_only_random_forest": {
+      "mean_balanced_accuracy": 0.39550264550264547,
+      "sd": 0.05432467376806009,
+      "features": [
+        "total_time"
+      ]
+    },
+    "all_features_logistic_regression": {
+      "mean_balanced_accuracy": 0.3603174603174603,
+      "sd": 0.06844059019686591,
+      "features": [
+        "total_time",
+        "bimanual_correlation",
+        "bimanual_lag_s",
+        "bimanual_concurrent_efficiency",
+        "bimanual_dist_speed_corr",
+        "simultaneous_motion_ratio",
+        "bimanual_symmetry",
+        "combined_idle_ratio",
+        "tool1_normalized_jerk",
+        "tool2_normalized_jerk",
+        "tool1_active_time_ratio",
+        "tool2_active_time_ratio",
+        "tool1_path_length",
+        "tool2_path_length",
+        "tool1_avg_speed",
+        "tool2_avg_speed",
+        "tool_distance_cv",
+        "tool_close_proximity_ratio",
+        "tool1_working_volume",
+        "tool2_working_volume",
+        "tool1_working_area_xy",
+        "tool2_working_area_xy",
+        "tool1_range_z",
+        "tool2_range_z",
+        "tool1_rotation_per_path",
+        "tool2_rotation_per_path",
+        "tool1_angular_velocity_cv",
+        "tool2_angular_velocity_cv",
+        "tool1_num_speed_peaks",
+        "tool2_num_speed_peaks"
+      ]
+    },
+    "all_features_random_forest": {
+      "mean_balanced_accuracy": 0.34325396825396826,
+      "sd": 0.10826701395943916,
+      "features": [
+        "total_time",
+        "bimanual_correlation",
+        "bimanual_lag_s",
+        "bimanual_concurrent_efficiency",
+        "bimanual_dist_speed_corr",
+        "simultaneous_motion_ratio",
+        "bimanual_symmetry",
+        "combined_idle_ratio",
+        "tool1_normalized_jerk",
+        "tool2_normalized_jerk",
+        "tool1_active_time_ratio",
+        "tool2_active_time_ratio",
+        "tool1_path_length",
+        "tool2_path_length",
+        "tool1_avg_speed",
+        "tool2_avg_speed",
+        "tool_distance_cv",
+        "tool_close_proximity_ratio",
+        "tool1_working_volume",
+        "tool2_working_volume",
+        "tool1_working_area_xy",
+        "tool2_working_area_xy",
+        "tool1_range_z",
+        "tool2_range_z",
+        "tool1_rotation_per_path",
+        "tool2_rotation_per_path",
+        "tool1_angular_velocity_cv",
+        "tool2_angular_velocity_cv",
+        "tool1_num_speed_peaks",
+        "tool2_num_speed_peaks"
+      ]
+    }
+  },
+  "leave_one_dataset_out": {
+    "time_only_logistic_regression": [
+      {
+        "held_out_dataset": "6DOF2023",
+        "balanced_accuracy": 0.3333333333333333,
+        "n_test": 24
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "balanced_accuracy": 0.5279866332497911,
+        "n_test": 55
+      },
+      {
+        "held_out_dataset": "BAPES2024",
+        "balanced_accuracy": 0.5413165266106442,
+        "n_test": 28
+      }
+    ],
+    "time_only_random_forest": [
+      {
+        "held_out_dataset": "6DOF2023",
+        "balanced_accuracy": 0.5370370370370371,
+        "n_test": 24
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "balanced_accuracy": 0.4357560568086884,
+        "n_test": 55
+      },
+      {
+        "held_out_dataset": "BAPES2024",
+        "balanced_accuracy": 0.4747899159663866,
+        "n_test": 28
+      }
+    ],
+    "all_features_logistic_regression": [
+      {
+        "held_out_dataset": "6DOF2023",
+        "balanced_accuracy": 0.46296296296296297,
+        "n_test": 24
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "balanced_accuracy": 0.32497911445279865,
+        "n_test": 55
+      },
+      {
+        "held_out_dataset": "BAPES2024",
+        "balanced_accuracy": 0.36274509803921573,
+        "n_test": 28
+      }
+    ],
+    "all_features_random_forest": [
+      {
+        "held_out_dataset": "6DOF2023",
+        "balanced_accuracy": 0.27777777777777773,
+        "n_test": 24
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "balanced_accuracy": 0.3505430242272347,
+        "n_test": 55
+      },
+      {
+        "held_out_dataset": "BAPES2024",
+        "balanced_accuracy": 0.30392156862745096,
+        "n_test": 28
+      }
+    ]
+  },
+  "top_random_forest_features": []
+}

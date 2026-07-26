@@ -1,0 +1,9 @@
+target,target_label,model,model_label,stratified_cv_balanced_accuracy,stratified_cv_sd,leave_one_dataset_out_balanced_accuracy,leave_one_dataset_out_min,leave_one_dataset_out_max,n_splits
+motion_defined,Motion-score bands,logistic_regression,Logistic regression,0.9481481481481481,0.0863844725162267,0.9907407407407408,0.9722222222222222,1.0,5
+motion_defined,Motion-score bands,random_forest,Random forest,0.9555555555555555,0.054433105395181765,0.9861111111111112,0.9583333333333334,1.0,5
+procedure_fixed,Procedure thresholds,logistic_regression,Logistic regression,0.3843915343915344,0.11729933197995121,0.3746897199425579,0.26820728291316526,0.4484544695071011,5
+procedure_fixed,Procedure thresholds,random_forest,Random forest,0.362962962962963,0.06755414162236494,0.35505266434059,0.33266499582289055,0.3991596638655462,5
+procedure_tertiles,Procedure tertiles,logistic_regression,Logistic regression,0.33333333333333337,0.12192940599113683,0.4021271613376876,0.3333333333333333,0.4598484848484849,5
+procedure_tertiles,Procedure tertiles,random_forest,Random forest,0.2702380952380952,0.028071014577503817,0.3696716538821802,0.2916666666666667,0.454469507101086,5
+procedure_kmeans,Procedure K-means,logistic_regression,Logistic regression,0.5048340548340549,0.16704300258582674,0.46421957671957675,0.28571428571428575,0.5847222222222223,5
+procedure_kmeans,Procedure K-means,random_forest,Random forest,0.26275613275613274,0.04702399204348823,0.28187830687830684,0.1984126984126984,0.3277777777777778,5

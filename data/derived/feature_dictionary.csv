@@ -1,0 +1,31 @@
+feature,label,favourable_direction,interpretation,domain,available_cohorts,nonmissing_trials,missing_trials
+total_time,Analysed duration,downarrow,shorter analysed task interval,Task efficiency,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+bimanual_correlation,Bimanual correlation,uparrow,more synchronous tool motion,Bimanual coordination,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+bimanual_lag_s,Bimanual lag,downarrow,less timing delay between tools,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+bimanual_concurrent_efficiency,Concurrent efficiency,uparrow,more efficient simultaneous tool use,Bimanual coordination,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+bimanual_dist_speed_corr,Distance-speed coupling,uparrow,more coupled spacing and speed control,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+simultaneous_motion_ratio,Simultaneous motion,uparrow,larger fraction of active frames with both tools moving,Bimanual coordination,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+bimanual_symmetry,Bimanual symmetry,uparrow,more balanced left/right tool use,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+combined_idle_ratio,Combined idle ratio,downarrow,less inactive task time,Task efficiency,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_normalized_jerk,Tool 1 normalised jerk,downarrow,smoother Tool 1 motion,Instrument motion control,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_normalized_jerk,Tool 2 normalised jerk,downarrow,smoother Tool 2 motion,Instrument motion control,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_active_time_ratio,Tool 1 active time,uparrow,more active Tool 1 use,Task efficiency,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_active_time_ratio,Tool 2 active time,uparrow,more active Tool 2 use,Task efficiency,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_path_length,Tool 1 path length,downarrow,shorter Tool 1 travel distance,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_path_length,Tool 2 path length,downarrow,shorter Tool 2 travel distance,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_avg_speed,Tool 1 speed,uparrow,faster Tool 1 movement,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_avg_speed,Tool 2 speed,uparrow,faster Tool 2 movement,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool_distance_cv,Tool distance variability,downarrow,steadier distance between tools,Bimanual coordination,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool_close_proximity_ratio,Close proximity,downarrow,less time with tools very close together,,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_working_volume,Tool 1 working volume,downarrow,more compact Tool 1 three-dimensional workspace,Workspace excursion,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_working_volume,Tool 2 working volume,downarrow,more compact Tool 2 three-dimensional workspace,Workspace excursion,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_working_area_xy,Tool 1 working area,downarrow,more compact Tool 1 image-plane workspace,Workspace excursion,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_working_area_xy,Tool 2 working area,downarrow,more compact Tool 2 image-plane workspace,Workspace excursion,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_range_z,Tool 1 depth range,downarrow,less Tool 1 camera-axis excursion,Workspace excursion,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_range_z,Tool 2 depth range,downarrow,less Tool 2 camera-axis excursion,Workspace excursion,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_rotation_per_path,Tool 1 rotation per path,downarrow,less Tool 1 rotation per millimetre travelled,Instrument motion control,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_rotation_per_path,Tool 2 rotation per path,downarrow,less Tool 2 rotation per millimetre travelled,Instrument motion control,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_angular_velocity_cv,Tool 1 angular velocity variability,downarrow,steadier Tool 1 rotational speed,Instrument motion control,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_angular_velocity_cv,Tool 2 angular velocity variability,downarrow,steadier Tool 2 rotational speed,Instrument motion control,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool1_num_speed_peaks,Tool 1 speed peaks,downarrow,fewer Tool 1 stop-start speed peaks,Task efficiency,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8
+tool2_num_speed_peaks,Tool 2 speed peaks,downarrow,fewer Tool 2 stop-start speed peaks,Task efficiency,Paediatric; Urology 1 (2023); Urology 2 (2024),107,8

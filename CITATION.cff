@@ -14,9 +14,12 @@ authors:
     affiliation: University of Leeds
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.20752650
+    value: 10.5281/zenodo.20752651
     description: Zenodo record for version 1.0
-repository: 'https://doi.org/10.5281/zenodo.20752650'
+  - type: doi
+    value: 10.5281/zenodo.20752650
+    description: Zenodo concept DOI for all versions
+repository: 'https://github.com/omariosc/LASK'
 repository-code: 'https://github.com/omariosc/LASK'
 url: 'https://doi.org/10.5281/zenodo.20752650'
 abstract: >-
@@ -28,8 +31,9 @@ abstract: >-
   validation set (10 trials) and a 6-DoF out-of-distribution test set (8
   trials), spanning surgeons from novice to expert. Each trial provides
   per-frame electromagnetic tool poses across roughly 91,000 frames, with
-  positions in millimetres, orientations as unit quaternions and calibrated jaw
-  angles for the 7-DoF cohorts, time-aligned to the video. Labelled keyframes
+  positions in millimetres, orientations as unit quaternions and relative
+  voltage-derived jaw-opening signals for the 7-DoF cohorts, time-aligned to
+  the video. Labelled keyframes
   supply instrument segmentation masks, tooltip and jaw keypoints, shaft-joint
   keypoints and per-component visibility flags for both instruments, alongside
   surgeon handedness and procedure experience.
@@ -68,3 +72,18 @@ references:
       name: Frontiers Media SA
     year: 2025
     doi: 10.3389/978-2-8325-5137-0
+  - type: conference-paper
+    title: Bayesian Temporal Pose Networks for Uncertainty-Calibrated Laparoscopic Tool Pose Tracking
+    authors:
+      - given-names: Omar
+        family-names: Choudhry
+      - given-names: Sharib
+        family-names: Ali
+      - given-names: Chandra Shekhar
+        family-names: Biyani
+      - given-names: Dominic
+        family-names: Jones
+    conference:
+      name: Medical Image Computing and Computer Assisted Intervention (MICCAI)
+    year: 2026
+    repository-code: https://github.com/omariosc/BTPN
