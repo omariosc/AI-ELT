@@ -1,0 +1,172 @@
+{
+  "available": true,
+  "features": [
+    "Coordination-control composite"
+  ],
+  "n_recordings_assigned": 107,
+  "n_independent_identifiers_fitted": 107,
+  "metric_band_silhouette": 0.5340644126720104,
+  "metric_band_davies_bouldin": 0.5574945498396043,
+  "metric_band_calinski_harabasz": 205.40036661359844,
+  "metric_band_seed_ari_mean": 0.6881185433201465,
+  "metric_band_seed_ari_min": 0.2457480281764961,
+  "metric_band_bootstrap_assignment_ari_median": 0.7557894702759759,
+  "metric_band_bootstrap_assignment_ari_ci": [
+    0.25019440016739297,
+    1.0
+  ],
+  "metric_band_centres": [
+    2.1605203823953825,
+    2.8661563368880443,
+    3.498385281385281
+  ],
+  "metric_band_thresholds": [
+    2.5133383596417134,
+    3.1822708091366625
+  ],
+  "metric_band_threshold_bootstrap_ci": [
+    {
+      "threshold": 1,
+      "ci_low": 2.2926625593349086,
+      "median": 2.549881584464918,
+      "ci_high": 2.9269077055625816
+    },
+    {
+      "threshold": 2,
+      "ci_low": 3.0849795438675742,
+      "median": 3.198773797443426,
+      "ci_high": 3.5601637509174164
+    }
+  ],
+  "sensitivity": {
+    "complete_case": {
+      "n_trials": 107,
+      "thresholds": [
+        2.5133383596417134,
+        3.1822708091366625
+      ],
+      "assignment_adjusted_rand_index": 1.0
+    },
+    "domain_weight_perturbation": {
+      "n_repetitions": 500,
+      "adjusted_rand_index_median": 0.9591035280410379,
+      "adjusted_rand_index_ci_low": 0.7199041122076191,
+      "adjusted_rand_index_ci_high": 1.0
+    },
+    "leave_one_domain_out": [
+      {
+        "omitted_domain": "Bimanual coordination",
+        "adjusted_rand_index": 0.13060915248255114,
+        "thresholds": [
+          2.7302769243898277,
+          3.630029209142112
+        ]
+      },
+      {
+        "omitted_domain": "Instrument motion control",
+        "adjusted_rand_index": 0.35444949343374316,
+        "thresholds": [
+          2.334584187210237,
+          3.2698409477427335
+        ]
+      }
+    ],
+    "leave_one_cohort_out": [
+      {
+        "held_out_dataset": "BAPES2024",
+        "thresholds": [
+          2.3904748376623375,
+          3.1671951659451656
+        ],
+        "held_out_adjusted_rand_index": 0.865164531375405
+      },
+      {
+        "held_out_dataset": "6DOF2023",
+        "thresholds": [
+          2.5767321004648194,
+          3.1817356808443398
+        ],
+        "held_out_adjusted_rand_index": 1.0
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "thresholds": [
+          2.535273368606702,
+          3.215837742504409
+        ],
+        "held_out_adjusted_rand_index": 0.8914523798531924
+      }
+    ]
+  },
+  "k_validation": [
+    {
+      "k": 2,
+      "silhouette": 0.5662174552602269,
+      "davies_bouldin": 0.5878701558520018,
+      "calinski_harabasz": 183.48140711375248,
+      "inertia": 10.989325724233584
+    },
+    {
+      "k": 3,
+      "silhouette": 0.5340644126720104,
+      "davies_bouldin": 0.5574945498396043,
+      "calinski_harabasz": 205.40036661359844,
+      "inertia": 6.099493281079126
+    },
+    {
+      "k": 4,
+      "silhouette": 0.5526414765421528,
+      "davies_bouldin": 0.5339018410670197,
+      "calinski_harabasz": 274.1045156576356,
+      "inertia": 3.3608403214706066
+    },
+    {
+      "k": 5,
+      "silhouette": 0.5435087697321636,
+      "davies_bouldin": 0.5047211727805098,
+      "calinski_harabasz": 309.8046641567337,
+      "inertia": 2.296149497107527
+    },
+    {
+      "k": 6,
+      "silhouette": 0.5354954704018147,
+      "davies_bouldin": 0.4844300101979635,
+      "calinski_harabasz": 340.0575213267391,
+      "inertia": 1.692925659373024
+    }
+  ],
+  "pca_variance": [
+    0.6118434437413051,
+    0.38815655625869483
+  ],
+  "adjusted_rand_vs_original_skill": 0.018846337788122808,
+  "cluster_summary": [
+    {
+      "metric_cluster": "metric_low",
+      "cluster_label": "Lower motion-score band",
+      "n": 16,
+      "median_total_procedures": 40.0,
+      "procedure_iqr_low": 13.0,
+      "procedure_iqr_high": 85.0,
+      "mean_coordination_control_composite": 2.1605203823953825
+    },
+    {
+      "metric_cluster": "metric_middle",
+      "cluster_label": "Middle motion-score band",
+      "n": 41,
+      "median_total_procedures": 20.0,
+      "procedure_iqr_low": 5.0,
+      "procedure_iqr_high": 100.0,
+      "mean_coordination_control_composite": 2.8661563368880443
+    },
+    {
+      "metric_cluster": "metric_high",
+      "cluster_label": "Upper motion-score band",
+      "n": 50,
+      "median_total_procedures": 80.0,
+      "procedure_iqr_low": 16.25,
+      "procedure_iqr_high": 300.0,
+      "mean_coordination_control_composite": 3.4983852813852807
+    }
+  ]
+}

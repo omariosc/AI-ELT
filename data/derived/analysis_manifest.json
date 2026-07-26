@@ -1,0 +1,64 @@
+{
+  "analysis_script": {
+    "path": "scripts/build_scirep_analysis.py",
+    "sha256": "2a147245ae25e03f5c998ea95fa94efb905e5b05e78dcdcbb942dbf5d2cafe82"
+  },
+  "python": {
+    "executable": "python3.14",
+    "version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+  },
+  "packages": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.1",
+    "matplotlib": "3.10.8",
+    "seaborn": "0.13.2",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.8.0",
+    "pyarrow": "23.0.1"
+  },
+  "inputs": {
+    "canonical_trials": {
+      "path": "$LASK_PHASE_CACHE/canonical_trials.csv",
+      "exists": true,
+      "size_bytes": 10880,
+      "sha256": "21fdd897bd4fadce9654339159b12e5519efb14d42dfc04cddb2e931bbc49914"
+    },
+    "phase_trials": {
+      "path": "$LASK_PHASE_CACHE/trials.parquet",
+      "exists": true,
+      "size_bytes": 18820,
+      "sha256": "33a59d1db3d2202c5f82fa0f7d32ecdf8d451fdff779af0182b04935df8ff30f"
+    },
+    "phase_cycles": {
+      "path": "$LASK_PHASE_CACHE/cycles.parquet",
+      "exists": true,
+      "size_bytes": 33995,
+      "sha256": "60f96435ee9ca525661c83c7c0a3a83483131487a54b333232d12ed3b7ac70bb"
+    },
+    "phase_frames": {
+      "path": "$LASK_PHASE_CACHE/frames.parquet",
+      "exists": true,
+      "size_bytes": 384362,
+      "sha256": "f59217f43a631b618a138e6b7c37d9fbecfb10b283cd47ab0c648cf0b7b2ffd5"
+    },
+    "combined_motion_metrics": {
+      "path": "$LASK_AI_ELT_ROOT/outputs/motion/combined_motion_metrics.csv",
+      "exists": true,
+      "size_bytes": 115865,
+      "sha256": "dadbc6c7d4629c8058bf3bf34df7e9c73f273861d43ef8fe11ef1681fb4f1265"
+    },
+    "trimmed_extended_features": {
+      "path": "$LASK_AI_ELT_ROOT/outputs/papers/paper1/results/extended_features_cache_trimmed.csv",
+      "exists": true,
+      "size_bytes": 297728,
+      "sha256": "1a72effd894355ef4a8f1f625845cac274b456f4759db8c4e33a7e095002ded2"
+    }
+  },
+  "random_seeds": {
+    "bootstrap_and_sampling": 20260618,
+    "classification_cv": 13,
+    "pca": 20260618,
+    "kmeans": 20260618
+  }
+}

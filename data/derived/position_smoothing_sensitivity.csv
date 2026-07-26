@@ -1,0 +1,4 @@
+position_smoothing,window_s,n,score_spearman_rho,median_absolute_score_change,fixed_cut_assignment_ari,refit_assignment_ari
+No position smoothing,0.0,107,0.9833552945234894,0.054545454545454675,0.7461892039309828,0.3175844249017427
+0.4 s primary window,0.4,107,1.0,0.0,1.0,1.0
+0.8 s window,0.8,107,0.9836590342619369,0.054545454545454675,0.85387290419947,0.8053423741454286

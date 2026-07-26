@@ -1,0 +1,392 @@
+{
+  "available": true,
+  "features": [
+    "Bimanual coordination",
+    "Instrument motion control",
+    "Coordination-control composite"
+  ],
+  "targets": {
+    "motion_defined": {
+      "available": true,
+      "label": "Motion-score bands",
+      "class_counts": {
+        "metric_high": 50,
+        "metric_middle": 41,
+        "metric_low": 16
+      },
+      "models": {
+        "logistic_regression": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.9481481481481481,
+            "sd": 0.0863844725162267,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 1.0,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.9722222222222222,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 1.0,
+              "n_test": 28
+            }
+          ]
+        },
+        "random_forest": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.9555555555555555,
+            "sd": 0.054433105395181765,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 1.0,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.9583333333333334,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 1.0,
+              "n_test": 28
+            }
+          ]
+        }
+      }
+    },
+    "procedure_fixed": {
+      "available": true,
+      "label": "Procedure thresholds",
+      "class_counts": {
+        "procedure_expert": 42,
+        "procedure_novice": 34,
+        "procedure_intermediate": 31
+      },
+      "models": {
+        "logistic_regression": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.3843915343915344,
+            "sd": 0.11729933197995121,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 0.4074074074074074,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.4484544695071011,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 0.26820728291316526,
+              "n_test": 28
+            }
+          ]
+        },
+        "random_forest": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.362962962962963,
+            "sd": 0.06755414162236494,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 0.3333333333333333,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.33266499582289055,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 0.3991596638655462,
+              "n_test": 28
+            }
+          ]
+        }
+      }
+    },
+    "procedure_tertiles": {
+      "available": true,
+      "label": "Procedure tertiles",
+      "class_counts": {
+        "procedure_tertile_low": 36,
+        "procedure_tertile_high": 36,
+        "procedure_tertile_mid": 35
+      },
+      "models": {
+        "logistic_regression": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.33333333333333337,
+            "sd": 0.12192940599113683,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 0.4598484848484849,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.41319966583124473,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 0.3333333333333333,
+              "n_test": 28
+            }
+          ]
+        },
+        "random_forest": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.2702380952380952,
+            "sd": 0.028071014577503817,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 0.36287878787878786,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.454469507101086,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 0.2916666666666667,
+              "n_test": 28
+            }
+          ]
+        }
+      }
+    },
+    "procedure_kmeans": {
+      "available": true,
+      "label": "Procedure K-means",
+      "class_counts": {
+        "procedure_kmeans_mid": 53,
+        "procedure_kmeans_high": 32,
+        "procedure_kmeans_low": 22
+      },
+      "models": {
+        "logistic_regression": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.5048340548340549,
+            "sd": 0.16704300258582674,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 0.5222222222222223,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.5847222222222223,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 0.28571428571428575,
+              "n_test": 28
+            }
+          ]
+        },
+        "random_forest": {
+          "stratified_cv": {
+            "mean_balanced_accuracy": 0.26275613275613274,
+            "sd": 0.04702399204348823,
+            "n_splits": 5
+          },
+          "leave_one_dataset_out": [
+            {
+              "held_out_dataset": "6DOF2023",
+              "balanced_accuracy": 0.3277777777777778,
+              "n_test": 24
+            },
+            {
+              "held_out_dataset": "7DOF2024",
+              "balanced_accuracy": 0.3194444444444444,
+              "n_test": 55
+            },
+            {
+              "held_out_dataset": "BAPES2024",
+              "balanced_accuracy": 0.1984126984126984,
+              "n_test": 28
+            }
+          ]
+        }
+      }
+    }
+  },
+  "comparison_rows": [
+    {
+      "target": "motion_defined",
+      "target_label": "Motion-score bands",
+      "model": "logistic_regression",
+      "model_label": "Logistic regression",
+      "stratified_cv_balanced_accuracy": 0.9481481481481481,
+      "stratified_cv_sd": 0.0863844725162267,
+      "leave_one_dataset_out_balanced_accuracy": 0.9907407407407408,
+      "leave_one_dataset_out_min": 0.9722222222222222,
+      "leave_one_dataset_out_max": 1.0,
+      "n_splits": 5
+    },
+    {
+      "target": "motion_defined",
+      "target_label": "Motion-score bands",
+      "model": "random_forest",
+      "model_label": "Random forest",
+      "stratified_cv_balanced_accuracy": 0.9555555555555555,
+      "stratified_cv_sd": 0.054433105395181765,
+      "leave_one_dataset_out_balanced_accuracy": 0.9861111111111112,
+      "leave_one_dataset_out_min": 0.9583333333333334,
+      "leave_one_dataset_out_max": 1.0,
+      "n_splits": 5
+    },
+    {
+      "target": "procedure_fixed",
+      "target_label": "Procedure thresholds",
+      "model": "logistic_regression",
+      "model_label": "Logistic regression",
+      "stratified_cv_balanced_accuracy": 0.3843915343915344,
+      "stratified_cv_sd": 0.11729933197995121,
+      "leave_one_dataset_out_balanced_accuracy": 0.3746897199425579,
+      "leave_one_dataset_out_min": 0.26820728291316526,
+      "leave_one_dataset_out_max": 0.4484544695071011,
+      "n_splits": 5
+    },
+    {
+      "target": "procedure_fixed",
+      "target_label": "Procedure thresholds",
+      "model": "random_forest",
+      "model_label": "Random forest",
+      "stratified_cv_balanced_accuracy": 0.362962962962963,
+      "stratified_cv_sd": 0.06755414162236494,
+      "leave_one_dataset_out_balanced_accuracy": 0.35505266434059,
+      "leave_one_dataset_out_min": 0.33266499582289055,
+      "leave_one_dataset_out_max": 0.3991596638655462,
+      "n_splits": 5
+    },
+    {
+      "target": "procedure_tertiles",
+      "target_label": "Procedure tertiles",
+      "model": "logistic_regression",
+      "model_label": "Logistic regression",
+      "stratified_cv_balanced_accuracy": 0.33333333333333337,
+      "stratified_cv_sd": 0.12192940599113683,
+      "leave_one_dataset_out_balanced_accuracy": 0.4021271613376876,
+      "leave_one_dataset_out_min": 0.3333333333333333,
+      "leave_one_dataset_out_max": 0.4598484848484849,
+      "n_splits": 5
+    },
+    {
+      "target": "procedure_tertiles",
+      "target_label": "Procedure tertiles",
+      "model": "random_forest",
+      "model_label": "Random forest",
+      "stratified_cv_balanced_accuracy": 0.2702380952380952,
+      "stratified_cv_sd": 0.028071014577503817,
+      "leave_one_dataset_out_balanced_accuracy": 0.3696716538821802,
+      "leave_one_dataset_out_min": 0.2916666666666667,
+      "leave_one_dataset_out_max": 0.454469507101086,
+      "n_splits": 5
+    },
+    {
+      "target": "procedure_kmeans",
+      "target_label": "Procedure K-means",
+      "model": "logistic_regression",
+      "model_label": "Logistic regression",
+      "stratified_cv_balanced_accuracy": 0.5048340548340549,
+      "stratified_cv_sd": 0.16704300258582674,
+      "leave_one_dataset_out_balanced_accuracy": 0.46421957671957675,
+      "leave_one_dataset_out_min": 0.28571428571428575,
+      "leave_one_dataset_out_max": 0.5847222222222223,
+      "n_splits": 5
+    },
+    {
+      "target": "procedure_kmeans",
+      "target_label": "Procedure K-means",
+      "model": "random_forest",
+      "model_label": "Random forest",
+      "stratified_cv_balanced_accuracy": 0.26275613275613274,
+      "stratified_cv_sd": 0.04702399204348823,
+      "leave_one_dataset_out_balanced_accuracy": 0.28187830687830684,
+      "leave_one_dataset_out_min": 0.1984126984126984,
+      "leave_one_dataset_out_max": 0.3277777777777778,
+      "n_splits": 5
+    }
+  ],
+  "stratified_cv": {
+    "metric_band_logistic_regression": {
+      "mean_balanced_accuracy": 0.9481481481481481,
+      "sd": 0.0863844725162267,
+      "n_splits": 5
+    },
+    "metric_band_random_forest": {
+      "mean_balanced_accuracy": 0.9555555555555555,
+      "sd": 0.054433105395181765,
+      "n_splits": 5
+    }
+  },
+  "leave_one_dataset_out": {
+    "metric_band_logistic_regression": [
+      {
+        "held_out_dataset": "6DOF2023",
+        "balanced_accuracy": 1.0,
+        "n_test": 24
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "balanced_accuracy": 0.9722222222222222,
+        "n_test": 55
+      },
+      {
+        "held_out_dataset": "BAPES2024",
+        "balanced_accuracy": 1.0,
+        "n_test": 28
+      }
+    ],
+    "metric_band_random_forest": [
+      {
+        "held_out_dataset": "6DOF2023",
+        "balanced_accuracy": 1.0,
+        "n_test": 24
+      },
+      {
+        "held_out_dataset": "7DOF2024",
+        "balanced_accuracy": 0.9583333333333334,
+        "n_test": 55
+      },
+      {
+        "held_out_dataset": "BAPES2024",
+        "balanced_accuracy": 1.0,
+        "n_test": 28
+      }
+    ]
+  }
+}
