@@ -1,7 +1,7 @@
 {
   "analysis_script": {
     "path": "scripts/build_scirep_analysis.py",
-    "sha256": "a41d57d8d8fa6c223c2ecda1837a97d917efa610139973438af0be3dba7111a9"
+    "sha256": "eb4b0267e2d50a0ecfe1bcc7ce303215d21f3a7ecb33143a95647db1bcd53055"
   },
   "python": {
     "executable": "python3.14",

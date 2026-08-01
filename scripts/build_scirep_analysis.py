@@ -71,7 +71,6 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, Rectangle
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -3046,53 +3045,43 @@ def plot_collection_setups() -> None:
     save_fig(fig, "fig0_collection_setups")
 
 
-def plot_peg_transfer_cycle_placeholder() -> None:
+def plot_peg_transfer_cycle_frames() -> None:
     stages = [
-        ("Reach", "Approach the source peg", "left", (0.24, 0.54), (0.22, 0.45)),
-        ("Grasp", "Close jaws around object", "left", (0.28, 0.55), (0.28, 0.55)),
-        ("Lift", "Lift clear of the peg", "left", (0.30, 0.68), (0.30, 0.68)),
-        ("Transfer", "Meet the opposite tool", "both", (0.50, 0.65), (0.50, 0.65)),
-        ("Place", "Move to the target peg", "right", (0.72, 0.58), (0.72, 0.58)),
-        ("Release", "Release and reset", "right", (0.76, 0.52), (0.78, 0.45)),
+        ("Reach", "reach_0520.png"),
+        ("Grasp", "grasp_0605.png"),
+        ("Lift", "lift_0611.png"),
+        ("Transfer", "transfer_0687.png"),
+        ("Place", "place_0785.png"),
+        ("Release", "release_0824.png"),
     ]
+    source = FIG / "source" / "phase_cycle_6dof_test18"
+    stage_paths = [(name, source / filename) for name, filename in stages]
+    if not all(path.exists() for _, path in stage_paths):
+        return
 
-    def draw_scene(ax: plt.Axes, stage: tuple[str, str, str, tuple[float, float], tuple[float, float]], panel: str) -> None:
-        name, subtitle, active, tool_tip, object_xy = stage
-        ax.set_xlim(0, 1)
-        ax.set_ylim(0, 1)
-        ax.set_aspect("equal")
-        ax.set_axis_off()
-        ax.add_patch(Rectangle((0.10, 0.20), 0.80, 0.50, facecolor="#F8F8F8", edgecolor="#777777", lw=0.8))
-        for x in (0.25, 0.75):
-            ax.plot([x, x], [0.34, 0.56], color="#555555", lw=2.0, solid_capstyle="round")
-            ax.add_patch(plt.Circle((x, 0.56), 0.025, facecolor="#D0D0D0", edgecolor="#777777", lw=0.6))
-
-        left_tip = tool_tip if active in {"left", "both"} else (0.18, 0.40)
-        right_tip = tool_tip if active in {"right", "both"} else (0.82, 0.40)
-        ax.plot([0.05, left_tip[0]], [0.22, left_tip[1]], color="#0072B2", lw=2.2, solid_capstyle="round")
-        ax.plot([0.95, right_tip[0]], [0.22, right_tip[1]], color="#009E73", lw=2.2, solid_capstyle="round")
-
-        if active == "both":
-            ax.add_patch(FancyArrowPatch((0.35, 0.63), (0.65, 0.63), arrowstyle="<->", mutation_scale=10, lw=1.2, color="#555555"))
-        elif active == "left":
-            ax.add_patch(FancyArrowPatch((0.18, 0.45), tool_tip, arrowstyle="->", mutation_scale=10, lw=1.2, color="#0072B2"))
-        elif active == "right":
-            ax.add_patch(FancyArrowPatch((0.58, 0.60), tool_tip, arrowstyle="->", mutation_scale=10, lw=1.2, color="#009E73"))
-
-        ax.add_patch(plt.Circle(object_xy, 0.040, facecolor="#E69F00", edgecolor="#8A5A00", lw=0.8))
-        if name == "Release":
-            ax.add_patch(FancyArrowPatch((0.70, 0.52), (0.80, 0.52), arrowstyle="->", mutation_scale=9, lw=1.0, color="#CC3311"))
-            ax.text(0.50, 0.16, "Optional nudge or correction", ha="center", va="center", fontsize=6.4, color="#CC3311")
-
-        ax.text(0.50, 0.91, name, ha="center", va="center", fontsize=10, weight="bold")
-        ax.text(0.50, 0.82, subtitle, ha="center", va="center", fontsize=6.9, color="#333333", wrap=True)
-        image_panel_label(ax, panel, y=-0.02)
-
-    fig, axes = plt.subplots(2, 3, figsize=(7.4, 4.8))
-    for ax, stage, panel in zip(axes.flat, stages, "abcdef"):
-        draw_scene(ax, stage, panel)
-    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.06, wspace=0.04, hspace=0.22)
-    save_fig(fig, "fig0_peg_transfer_cycle_placeholder")
+    fig, axes = plt.subplots(2, 3, figsize=(7.4, 4.2))
+    for ax, (stage, path), panel in zip(axes.flat, stage_paths, "abcdef"):
+        show_center_crop(ax, path)
+        ax.text(
+            0.5,
+            -0.065,
+            f"({panel}) {stage}",
+            transform=ax.transAxes,
+            ha="center",
+            va="top",
+            fontsize=8,
+            fontweight="bold",
+            clip_on=False,
+        )
+    fig.subplots_adjust(
+        left=0.01,
+        right=0.99,
+        top=0.99,
+        bottom=0.07,
+        wspace=0.025,
+        hspace=0.19,
+    )
+    save_fig(fig, "fig0_peg_transfer_cycle_frames")
 
 
 def plot_feature_effects(stats_df: pd.DataFrame) -> None:
@@ -5209,7 +5198,7 @@ def main() -> None:
     plot_training_systems_context()
     plot_collection_setups()
     plot_task_setup_overview()
-    plot_peg_transfer_cycle_placeholder()
+    plot_peg_transfer_cycle_frames()
     plot_cohort(all_df, trials)
     plot_feature_effects(feature_stats)
     plot_phase_timing(cycles, trials)
