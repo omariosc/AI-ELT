@@ -49,6 +49,8 @@ def main() -> None:
         DERIVED / "feature_dictionary.csv",
         DERIVED / "all_trial_feature_statistics.csv",
         DERIVED / "cohort_adjusted_models.csv",
+        DERIVED / "jerk_exclusion_contextual_correlations.csv",
+        DERIVED / "jerk_exclusion_score_sensitivity.csv",
     ]
     for path in required_files:
         require(path.is_file() and path.stat().st_size > 0, f"Missing required file: {path}")
@@ -74,6 +76,34 @@ def main() -> None:
     require(
         not significant_group_tests,
         "No three-group feature test should survive correction",
+    )
+
+    bimanual = next(
+        row for row in feature_rows if row["feature"] == "bimanual_correlation"
+    )
+    require(
+        float(bimanual["spearman_random_ci_low"]) < 0
+        < float(bimanual["spearman_random_ci_high"]),
+        "Bimanual random-effects interval should include no association",
+    )
+
+    jerk_summary = read_csv("jerk_exclusion_score_sensitivity.csv")
+    require(len(jerk_summary) == 1, "Expected one jerk-exclusion summary row")
+    jerk_row = jerk_summary[0]
+    require(int(jerk_row["n"]) == 107, "Expected 107 recordings in jerk sensitivity")
+    require(
+        0.84 < float(jerk_row["score_spearman_rho"]) < 0.87,
+        "Unexpected jerk-exclusion score correlation",
+    )
+    require(
+        0.34 < float(jerk_row["fixed_cut_assignment_ari"]) < 0.37,
+        "Unexpected jerk-exclusion band agreement",
+    )
+    jerk_context = read_csv("jerk_exclusion_contextual_correlations.csv")
+    require(len(jerk_context) == 6, "Expected six jerk-exclusion contextual checks")
+    require(
+        min(float(row["q"]) for row in jerk_context) >= 0.05,
+        "No jerk-exclusion contextual check should survive correction",
     )
 
     model_rows = read_csv("cohort_adjusted_models.csv")

@@ -21,6 +21,8 @@ data/derived/*
 !data/derived/kmeans_cluster_summary.csv
 !data/derived/kmeans_thresholds.json
 !data/derived/kmeans_validation.csv
+!data/derived/jerk_exclusion_contextual_correlations.csv
+!data/derived/jerk_exclusion_score_sensitivity.csv
 !data/derived/metric_band_classification_comparison.csv
 !data/derived/metric_band_classification_summary.json
 !data/derived/phase_fraction_ci.csv

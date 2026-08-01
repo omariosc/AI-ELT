@@ -1,12 +1,12 @@
 {
   "analysis_script": {
     "path": "scripts/build_scirep_analysis.py",
-    "sha256": "2a147245ae25e03f5c998ea95fa94efb905e5b05e78dcdcbb942dbf5d2cafe82"
+    "sha256": "a41d57d8d8fa6c223c2ecda1837a97d917efa610139973438af0be3dba7111a9"
   },
   "python": {
     "executable": "python3.14",
     "version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
-    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O"
   },
   "packages": {
     "numpy": "2.4.4",

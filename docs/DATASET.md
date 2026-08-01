@@ -18,6 +18,12 @@ It was not designed as a validated clinical examination. Procedure counts,
 career stage, and calculated motion scores should not be interpreted as
 interchangeable measures of competence.
 
+In descriptive text, the two acquisition channels are called the **left tool**
+and **right tool**, based on their usual side of entry in the endoscopic image.
+These are not dominant-hand labels. Released files retain `tool1` and `tool2`
+field names so existing loaders remain compatible. The mapping was checked
+against annotated reference frames from every cohort.
+
 ## Release stages
 
 The permanent concept DOI is
@@ -70,6 +76,17 @@ recorded.
 Data were collected at a urology simulation boot camp in October 2024.
 Position, orientation, and relative jaw-opening channels were recorded at
 13 frames per second.
+
+### 2025 collection continuation
+
+The collection programme continued at a urology boot camp in 2025. That event
+recorded circle cutting and intracorporeal suturing but did not record peg
+transfer. Those recordings are not part of the 115-recording peg-transfer
+analysis because there is no matched comparison cohort and the current sample
+is limited. Needle guidance was not part of the local Leeds collection
+protocol, although it remains a task in the current Laparoscopic Urological
+Skills Step 1 programme and its European Basic Laparoscopic Urological Skills
+certification examination.
 
 The trainers, tools, camera settings, coordinate distributions, and insertion
 angles differed between cohorts. Raw kinematic values should not be pooled

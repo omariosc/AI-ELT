@@ -48,6 +48,13 @@ The public release is organised as Urology 2 training data, Paediatric
 validation data, and Urology 1 testing data. The names `7DOF2024`,
 `BAPES2024`, and `6DOF2023` are retained in files for compatibility.
 
+In the analysis and figures, the acquisition channels are described as the
+**left tool** and **right tool**, according to their usual side of entry in the
+endoscopic image. These are image-side labels, not dominant-hand and
+non-dominant-hand labels. The mapping was checked against annotated reference
+frames from each cohort. Internal fields retain `tool1_*` and `tool2_*` names
+for compatibility.
+
 ## What each recording contains
 
 - Endoscopic video of a complete peg-transfer attempt.
@@ -84,17 +91,31 @@ The main findings are:
   significant after correction across 29 motion features.
 - Eight features had modest within-cohort associations with lifetime procedure
   volume. Longer experience was associated with shorter analysed duration,
-  lower normalised jerk, fewer speed peaks, shorter Tool 1 path length, faster
-  Tool 2 movement, and stronger bimanual correlation.
-- Cohort accounted for 88% and 92% of the variation in Tool 1 and Tool 2 speed,
-  respectively. This shows why unadjusted pooling across collection settings is
-  misleading.
+  lower normalised jerk, fewer speed peaks, shorter left-tool path length,
+  faster right-tool movement, and bimanual correlation. The bimanual
+  association varied by cohort; its random-effects sensitivity estimate was
+  inconclusive.
+- Cohort accounted for 88% and 92% of the variation in left- and right-tool
+  speed, respectively. This shows why unadjusted pooling across collection
+  settings is misleading.
 - Data-derived lower, middle, and upper motion-score bands had negligible
   agreement with procedure-count groups (adjusted Rand index 0.019). These are
   descriptive motion strata, not clinical skill grades.
+- Removing duration-dependent normalised jerk retained a related continuous
+  score but changed many band assignments (adjusted Rand index 0.351). None of
+  the six contextual duration or task-efficiency associations then survived
+  correction.
 - Models recovered the motion-score rule with high accuracy because the target
   was calculated from the same motion domains. This is a software consistency
   check and must not be interpreted as independent skill prediction.
+
+Duration, movement smoothness, stop-start peaks, travel distance, and
+coordination between the tools are prioritised for prospective feedback
+validation. Raw speed, workspace size, jaw voltage, and phase fractions are
+less dependable as stand-alone indicators. The current results do not show
+that feedback on any one measurement improves learning, and they do not
+support instructing trainees simply to move faster or to use a smaller
+workspace.
 
 Full methods, confidence intervals, corrected probability values, sensitivity
 analyses, and limitations are provided in the
@@ -128,7 +149,8 @@ interchangeable.
 
 The coordination and control score is interpreted continuously. Duration and
 task efficiency are shown as contextual measurements rather than external
-clinical validation.
+clinical validation. A sensitivity analysis without normalised jerk shows why
+the categorical bands should not be treated as fixed performance grades.
 
 Additional examples include the
 [cohort inventory](paper/figures/fig1_cohort_structure.png) and
@@ -148,6 +170,7 @@ The script uses the sibling `BTPN-MT` and `AI-ELT` paths by default. Other
 locations can be supplied explicitly:
 
 ```bash
+export LASK_CODE_ROOT=/path/containing/AI-ELT-and-BTPN-MT
 export LASK_PHASE_CACHE=/path/to/phase_cache
 export LASK_AI_ELT_ROOT=/path/to/AI-ELT
 export LASK_ORIGIN_MOTION=/path/to/per_recording_kinematic_json

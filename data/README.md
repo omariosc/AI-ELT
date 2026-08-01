@@ -13,7 +13,7 @@ Important files:
 |:--|:--|
 | `analysis_manifest.json` | Software versions, random seeds, input hashes, and portable input locations |
 | `analysis_summary.json` | Main denominators, model summaries, clustering diagnostics, and sensitivity checks |
-| `all_trial_feature_statistics.csv` | Effect sizes, confidence intervals, continuous correlations, and corrected probabilities for 29 features |
+| `all_trial_feature_statistics.csv` | Effect sizes, confidence intervals, fixed- and random-effects correlation summaries, and corrected probabilities for 29 features |
 | `cohort_specific_effects.csv` | Cohort-specific novice-versus-expert estimates |
 | `cohort_adjusted_models.csv` | Cohort-adjusted procedure-volume models |
 | `feature_dictionary.csv` | Feature labels, interpretation, direction, domain, and availability |
@@ -22,6 +22,8 @@ Important files:
 | `kmeans_cluster_summary.csv` | Descriptive motion-score band sizes and centres |
 | `kmeans_validation.csv` | Internal indices for alternative values of `k` |
 | `processing_sensitivity.csv` | Position and orientation processing sensitivity |
+| `jerk_exclusion_score_sensitivity.csv` | Continuous-score and band-assignment sensitivity after removing duration-dependent normalised jerk |
+| `jerk_exclusion_contextual_correlations.csv` | Within-cohort duration and task-efficiency checks for the score without normalised jerk |
 | `trimming_rule_validation.csv` | Automatic versus labelled task-boundary agreement |
 | `phase_kinematics_summary.csv` | Aggregate phase-specific duration, speed, and path-rate summaries |
 

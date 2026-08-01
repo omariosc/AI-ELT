@@ -12,6 +12,11 @@ The machine-readable dictionary is
 Its display directions are analytical hypotheses, not validated clinical
 preferences.
 
+The prose and figures use **left tool** and **right tool** for the channels that
+normally enter from the left and right sides of the endoscopic image. These
+labels do not indicate hand dominance. Internal feature names retain
+`tool1_*` and `tool2_*` for compatibility.
+
 ## Preprocessing
 
 For Paediatric and Urology 2, time is calculated at 13 frames per second.
@@ -115,8 +120,8 @@ speed divided by its mean.
 
 ### Bimanual correlation
 
-Bimanual correlation is the Pearson correlation between the simultaneous Tool
-1 and Tool 2 speed traces. A positive value means the tools tend to speed up
+Bimanual correlation is the Pearson correlation between the simultaneous left-
+and right-tool speed traces. A positive value means the tools tend to speed up
 and slow down together. It does not show that the instruments follow the same
 spatial path.
 
@@ -183,6 +188,14 @@ Equal-weighted constructs:
 1. normalised jerk for both tools;
 2. rotation per path for both tools;
 3. angular velocity variability for both tools.
+
+Because normalised jerk includes duration in its definition, it is not an
+independent measure of movement quality. Removing it produced a continuous
+score that remained correlated with the primary score (`rho = 0.853`) but
+changed many categorical assignments (adjusted Rand index `0.351`). None of
+the six alternative-score associations with duration or task efficiency
+survived correction. The continuous constructs should therefore be reported
+directly, and the descriptive bands should not be treated as fixed grades.
 
 ### Task efficiency
 

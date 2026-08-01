@@ -11,6 +11,12 @@ score. It is to identify reproducible measurements that could complement
 expert observation, make feedback more specific, and support later automated
 assessment after external validation.
 
+The analysis calls the acquisition channels the **left tool** and **right
+tool**, based on their usual side of entry in the endoscopic image. These are
+not dominant-hand labels. The mapping was checked against annotated reference
+frames from every cohort. Machine-readable tables retain `tool1_*` and
+`tool2_*` field names for compatibility with the released files.
+
 ## Analysis populations
 
 Four populations are kept separate:
@@ -82,6 +88,12 @@ estimates how often a value from one group exceeds a value from the other after
 accounting for ties. Confidence intervals use 3,000 bootstrap resamples within
 cohort.
 
+Bimanual correlation had substantial between-cohort heterogeneity. A
+random-effects sensitivity analysis therefore used DerSimonian-Laird
+between-cohort variance and a modified Knapp-Hartung interval on Fisher's
+`z` scale. Only three cohorts contribute, so this sensitivity interval is
+necessarily imprecise.
+
 ### Cohort-adjusted models
 
 Eight outcomes were selected to represent task duration, bimanual
@@ -141,20 +153,23 @@ Eight of 29 within-cohort meta-analytic correlations remained significant:
 
 | Feature | Spearman correlation | 95% confidence interval | Corrected `q` |
 |:--|--:|:--|--:|
-| Tool 1 normalised jerk | -0.338 | -0.500 to -0.153 | 0.011 |
+| Left-tool normalised jerk | -0.338 | -0.500 to -0.153 | 0.011 |
 | Analysed duration | -0.327 | -0.491 to -0.141 | 0.011 |
-| Tool 2 normalised jerk | -0.301 | -0.469 to -0.112 | 0.020 |
-| Tool 2 speed peaks | -0.288 | -0.458 to -0.098 | 0.023 |
-| Tool 1 speed peaks | -0.282 | -0.453 to -0.092 | 0.023 |
-| Tool 1 path length | -0.278 | -0.449 to -0.087 | 0.023 |
-| Tool 2 speed | 0.265 | 0.074 to 0.438 | 0.026 |
+| Right-tool normalised jerk | -0.301 | -0.469 to -0.112 | 0.020 |
+| Right-tool speed peaks | -0.288 | -0.458 to -0.098 | 0.023 |
+| Left-tool speed peaks | -0.282 | -0.453 to -0.092 | 0.023 |
+| Left-tool path length | -0.278 | -0.449 to -0.087 | 0.023 |
+| Right-tool speed | 0.265 | 0.074 to 0.438 | 0.026 |
 | Bimanual correlation | 0.265 | 0.074 to 0.438 | 0.026 |
 
 The effects are modest and distributions overlap. Bimanual correlation also
-showed moderate between-cohort heterogeneity (`I2 = 60%`). The `I2` statistic
-estimates the percentage of observed variation attributable to differences
-between cohorts rather than sampling uncertainty. This result should not be
-treated as a universal threshold.
+showed moderate between-cohort heterogeneity (`I2 = 60%`). Cohort-specific
+correlations were -0.08 in Urology 1, 0.15 in Paediatric, and 0.44 in Urology
+2. The random-effects sensitivity estimate was 0.21 with a 95% confidence
+interval from -0.46 to 0.73. The `I2` statistic estimates the percentage of
+observed variation attributable to differences between cohorts rather than
+sampling uncertainty. This result should not be treated as a consistent
+cross-cohort effect or universal threshold.
 
 ### Cohort-adjusted estimates
 
@@ -166,14 +181,16 @@ Three prespecified outcomes remained significant after correction:
 | Bimanual correlation | 0.29 | 0.09 to 0.51 | 0.030 |
 | Coordination and control score | 0.28 | 0.07 to 0.51 | 0.033 |
 
-These estimates support faster completion and stronger temporal coordination
-as the clearest repeated signals. They do not establish causal effects of
-training.
+These estimates identify duration and temporal coordination for further
+validation after accounting for average cohort differences. They do not
+establish causal effects of training, and the bimanual association remains
+heterogeneous between cohorts.
 
 ### Acquisition setting can dominate raw movement
 
-Cohort alone explained 88% of the variance in Tool 1 speed and 92% in Tool 2
-speed. Procedure volume added little after cohort for these outcomes.
+Cohort alone explained 88% of the variance in left-tool speed and 92% in
+right-tool speed. Procedure volume added little after cohort for these
+outcomes.
 
 This result supports separate cohort plots and warns against a single raw-speed
 threshold across equipment configurations.
@@ -208,6 +225,26 @@ are compact and well separated. Two- and four-band solutions also have
 plausible internal indices. Three bands are retained to aid interpretation,
 not because the data prove three natural competence classes.
 
+### Duration-dependent smoothness sensitivity
+
+Normalised jerk contains analysed duration in its formula. The score was
+therefore recalculated after removing the normalised-jerk construct from
+instrument motion control.
+
+| Sensitivity result | Value |
+|:--|--:|
+| Correlation with primary continuous score | 0.853 |
+| Median absolute score change | 0.167 |
+| Agreement using primary cut points | 0.351 |
+| Agreement after refitting cut points | 0.351 |
+
+The alternative score contained bimanual coordination, rotation per path, and
+angular velocity variability, but no direct duration term. None of its six
+within-cohort associations with analysed duration or task efficiency survived
+false discovery rate correction (`q >= 0.096`). The continuous measurements
+remain usable, but the categorical bands depend materially on normalised jerk
+and should not be treated as calibrated grades.
+
 Logistic regression and random forest recover the band rule with balanced
 accuracy around 0.95. This is expected because the target bands are calculated
 from the same motion domains supplied to the classifier. It confirms software
@@ -237,6 +274,25 @@ It should not yet be used to assign clinical grades.
 
 ## Potential value to surgeons and trainers
 
+The current evidence prioritises three different roles for future validation.
+
+- **Candidate feedback measurements:** duration, normalised jerk, stop-start
+  speed peaks, travel distance, and bimanual correlation. Prospective studies
+  must show whether presenting these values improves learning.
+- **Contextual diagnostics:** phase timing, raw speed, rotation, workspace use,
+  and jaw voltage. These may explain a performance pattern but are too
+  acquisition-dependent or weakly calibrated to grade performance alone.
+- **Unsupported as stand-alone skill labels:** procedure count, a single speed
+  threshold, a universally small workspace, or reconstruction of the
+  internally defined motion bands by a classifier.
+
+A candidate report could show data quality first, then duration and visible
+errors, left- and right-tool smoothness, stop-start peaks, travel distance,
+bimanual coordination, and the phase responsible for delay or correction.
+Repeated attempts could show whether each measure changes within the same
+training setup. This report remains a design for prospective evaluation rather
+than a validated intervention.
+
 With further validation, the framework could support:
 
 1. objective evidence alongside expert observation;
@@ -249,10 +305,10 @@ With further validation, the framework could support:
 6. development of video-based systems trained against high-fidelity motion
    measurements.
 
-The strongest near-term application is formative feedback. Summative
-assessment would require blinded expert ratings, independent cohorts,
-predefined thresholds, test-retest reliability, and evidence that score
-changes correspond to meaningful training or clinical outcomes.
+The strongest near-term application is evaluation of formative feedback.
+Summative assessment would require blinded expert ratings, independent
+cohorts, predefined thresholds, test-retest reliability, and evidence that
+score changes correspond to meaningful training or clinical outcomes.
 
 ## Reproducibility
 

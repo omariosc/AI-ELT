@@ -8,6 +8,7 @@ This script intentionally separates:
   3. the 38-recording phase-annotated subset for phase/cycle analyses.
 
 The input locations can be configured with:
+  LASK_CODE_ROOT    Directory containing sibling AI-ELT and BTPN-MT repos.
   LASK_PHASE_CACHE  Directory containing canonical_trials.csv and the phase
                     parquet files.
   LASK_AI_ELT_ROOT  AI-ELT project root containing motion and feature caches.
@@ -36,12 +37,26 @@ def configured_path(name: str, default: Path) -> Path:
 
 SCRIPT_PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = configured_path("LASK_PROJECT_ROOT", SCRIPT_PROJECT_ROOT)
-PHD = SCRIPT_PROJECT_ROOT.parents[1]
+
+
+def default_code_root() -> Path:
+    """Locate sibling analysis repositories in common checkout layouts."""
+    candidates = [SCRIPT_PROJECT_ROOT.parent, *SCRIPT_PROJECT_ROOT.parents]
+    for candidate in candidates:
+        if (candidate / "AI-ELT").is_dir() and (candidate / "BTPN-MT").is_dir():
+            return candidate
+        code = candidate / "Code"
+        if (code / "AI-ELT").is_dir() and (code / "BTPN-MT").is_dir():
+            return code
+    return SCRIPT_PROJECT_ROOT.parent
+
+
+CODE_ROOT = configured_path("LASK_CODE_ROOT", default_code_root())
 BTPN_CACHE = configured_path(
     "LASK_PHASE_CACHE",
-    PHD / "Code" / "BTPN-MT" / "data" / "cache",
+    CODE_ROOT / "BTPN-MT" / "data" / "cache",
 )
-AI_ELT = configured_path("LASK_AI_ELT_ROOT", PHD / "Code" / "AI-ELT")
+AI_ELT = configured_path("LASK_AI_ELT_ROOT", CODE_ROOT / "AI-ELT")
 ORIGIN_MOTION = configured_path(
     "LASK_ORIGIN_MOTION",
     AI_ELT / "outputs" / "ssl" / "origin" / "origin_data" / "ORIGIN_ALL",
@@ -120,8 +135,9 @@ def validate_analysis_inputs() -> None:
     if missing:
         details = "\n  ".join(missing)
         raise FileNotFoundError(
-            "The analysis inputs are incomplete. Configure LASK_PHASE_CACHE, "
-            "LASK_AI_ELT_ROOT, and optionally LASK_ORIGIN_MOTION.\n  "
+            "The analysis inputs are incomplete. Configure LASK_CODE_ROOT or "
+            "LASK_PHASE_CACHE and LASK_AI_ELT_ROOT, and optionally "
+            "LASK_ORIGIN_MOTION.\n  "
             f"{details}"
         )
 
@@ -182,28 +198,28 @@ FEATURES = {
     "simultaneous_motion_ratio": "Simultaneous motion",
     "bimanual_symmetry": "Bimanual symmetry",
     "combined_idle_ratio": "Combined idle ratio",
-    "tool1_normalized_jerk": "Tool 1 normalised jerk",
-    "tool2_normalized_jerk": "Tool 2 normalised jerk",
-    "tool1_active_time_ratio": "Tool 1 active time",
-    "tool2_active_time_ratio": "Tool 2 active time",
-    "tool1_path_length": "Tool 1 path length",
-    "tool2_path_length": "Tool 2 path length",
-    "tool1_avg_speed": "Tool 1 speed",
-    "tool2_avg_speed": "Tool 2 speed",
+    "tool1_normalized_jerk": "Left tool normalised jerk",
+    "tool2_normalized_jerk": "Right tool normalised jerk",
+    "tool1_active_time_ratio": "Left tool active time",
+    "tool2_active_time_ratio": "Right tool active time",
+    "tool1_path_length": "Left tool path length",
+    "tool2_path_length": "Right tool path length",
+    "tool1_avg_speed": "Left tool speed",
+    "tool2_avg_speed": "Right tool speed",
     "tool_distance_cv": "Tool distance variability",
     "tool_close_proximity_ratio": "Close proximity",
-    "tool1_working_volume": "Tool 1 working volume",
-    "tool2_working_volume": "Tool 2 working volume",
-    "tool1_working_area_xy": "Tool 1 working area",
-    "tool2_working_area_xy": "Tool 2 working area",
-    "tool1_range_z": "Tool 1 depth range",
-    "tool2_range_z": "Tool 2 depth range",
-    "tool1_rotation_per_path": "Tool 1 rotation per path",
-    "tool2_rotation_per_path": "Tool 2 rotation per path",
-    "tool1_angular_velocity_cv": "Tool 1 angular velocity variability",
-    "tool2_angular_velocity_cv": "Tool 2 angular velocity variability",
-    "tool1_num_speed_peaks": "Tool 1 speed peaks",
-    "tool2_num_speed_peaks": "Tool 2 speed peaks",
+    "tool1_working_volume": "Left tool working volume",
+    "tool2_working_volume": "Right tool working volume",
+    "tool1_working_area_xy": "Left tool working area",
+    "tool2_working_area_xy": "Right tool working area",
+    "tool1_range_z": "Left tool depth range",
+    "tool2_range_z": "Right tool depth range",
+    "tool1_rotation_per_path": "Left tool rotation per path",
+    "tool2_rotation_per_path": "Right tool rotation per path",
+    "tool1_angular_velocity_cv": "Left tool angular velocity variability",
+    "tool2_angular_velocity_cv": "Right tool angular velocity variability",
+    "tool1_num_speed_peaks": "Left tool speed peaks",
+    "tool2_num_speed_peaks": "Right tool speed peaks",
     "Coordination-control composite": "Coordination and control score",
 }
 
@@ -216,28 +232,28 @@ FEATURE_DIRECTIONS = {
     "simultaneous_motion_ratio": ("$\\uparrow$", "larger fraction of active frames with both tools moving"),
     "bimanual_symmetry": ("$\\uparrow$", "more balanced left/right tool use"),
     "combined_idle_ratio": ("$\\downarrow$", "less inactive task time"),
-    "tool1_normalized_jerk": ("$\\downarrow$", "smoother Tool 1 motion"),
-    "tool2_normalized_jerk": ("$\\downarrow$", "smoother Tool 2 motion"),
-    "tool1_active_time_ratio": ("$\\uparrow$", "more active Tool 1 use"),
-    "tool2_active_time_ratio": ("$\\uparrow$", "more active Tool 2 use"),
-    "tool1_path_length": ("$\\downarrow$", "shorter Tool 1 travel distance"),
-    "tool2_path_length": ("$\\downarrow$", "shorter Tool 2 travel distance"),
-    "tool1_avg_speed": ("$\\uparrow$", "faster Tool 1 movement"),
-    "tool2_avg_speed": ("$\\uparrow$", "faster Tool 2 movement"),
+    "tool1_normalized_jerk": ("$\\downarrow$", "smoother left-tool motion"),
+    "tool2_normalized_jerk": ("$\\downarrow$", "smoother right-tool motion"),
+    "tool1_active_time_ratio": ("$\\uparrow$", "more active use of the left tool"),
+    "tool2_active_time_ratio": ("$\\uparrow$", "more active use of the right tool"),
+    "tool1_path_length": ("$\\downarrow$", "shorter left-tool travel distance"),
+    "tool2_path_length": ("$\\downarrow$", "shorter right-tool travel distance"),
+    "tool1_avg_speed": ("$\\uparrow$", "faster left-tool movement"),
+    "tool2_avg_speed": ("$\\uparrow$", "faster right-tool movement"),
     "tool_distance_cv": ("$\\downarrow$", "steadier distance between tools"),
     "tool_close_proximity_ratio": ("$\\downarrow$", "less time with tools very close together"),
-    "tool1_working_volume": ("$\\downarrow$", "more compact Tool 1 three-dimensional workspace"),
-    "tool2_working_volume": ("$\\downarrow$", "more compact Tool 2 three-dimensional workspace"),
-    "tool1_working_area_xy": ("$\\downarrow$", "more compact Tool 1 image-plane workspace"),
-    "tool2_working_area_xy": ("$\\downarrow$", "more compact Tool 2 image-plane workspace"),
-    "tool1_range_z": ("$\\downarrow$", "less Tool 1 camera-axis excursion"),
-    "tool2_range_z": ("$\\downarrow$", "less Tool 2 camera-axis excursion"),
-    "tool1_rotation_per_path": ("$\\downarrow$", "less Tool 1 rotation per millimetre travelled"),
-    "tool2_rotation_per_path": ("$\\downarrow$", "less Tool 2 rotation per millimetre travelled"),
-    "tool1_angular_velocity_cv": ("$\\downarrow$", "steadier Tool 1 rotational speed"),
-    "tool2_angular_velocity_cv": ("$\\downarrow$", "steadier Tool 2 rotational speed"),
-    "tool1_num_speed_peaks": ("$\\downarrow$", "fewer Tool 1 stop-start speed peaks"),
-    "tool2_num_speed_peaks": ("$\\downarrow$", "fewer Tool 2 stop-start speed peaks"),
+    "tool1_working_volume": ("$\\downarrow$", "more compact left-tool three-dimensional workspace"),
+    "tool2_working_volume": ("$\\downarrow$", "more compact right-tool three-dimensional workspace"),
+    "tool1_working_area_xy": ("$\\downarrow$", "more compact left-tool image-plane workspace"),
+    "tool2_working_area_xy": ("$\\downarrow$", "more compact right-tool image-plane workspace"),
+    "tool1_range_z": ("$\\downarrow$", "less left-tool camera-axis excursion"),
+    "tool2_range_z": ("$\\downarrow$", "less right-tool camera-axis excursion"),
+    "tool1_rotation_per_path": ("$\\downarrow$", "less left-tool rotation per millimetre travelled"),
+    "tool2_rotation_per_path": ("$\\downarrow$", "less right-tool rotation per millimetre travelled"),
+    "tool1_angular_velocity_cv": ("$\\downarrow$", "steadier left-tool rotational speed"),
+    "tool2_angular_velocity_cv": ("$\\downarrow$", "steadier right-tool rotational speed"),
+    "tool1_num_speed_peaks": ("$\\downarrow$", "fewer left-tool stop-start speed peaks"),
+    "tool2_num_speed_peaks": ("$\\downarrow$", "fewer right-tool stop-start speed peaks"),
 }
 
 KMEANS_FEATURES = [
@@ -376,6 +392,38 @@ def dataset_slug(dataset: str) -> str:
 
 def panel_label(ax: plt.Axes, label: str) -> None:
     ax.text(-0.12, 1.03, label, transform=ax.transAxes, fontsize=10, fontweight="bold")
+
+
+def image_panel_label(ax: plt.Axes, label: str, y: float = -0.08) -> None:
+    """Place bracketed labels below photographic or schematic panels."""
+    ax.text(
+        0.5,
+        y,
+        f"({label})",
+        transform=ax.transAxes,
+        ha="center",
+        va="top",
+        fontsize=8,
+        fontweight="bold",
+        clip_on=False,
+    )
+
+
+def show_center_crop(ax: plt.Axes, path: Path, target_aspect: float = 16 / 9) -> None:
+    """Display an image using a centred crop without stretching it."""
+    image = plt.imread(path)
+    height, width = image.shape[:2]
+    current_aspect = width / height
+    if current_aspect > target_aspect:
+        cropped_width = int(round(height * target_aspect))
+        start = max(0, (width - cropped_width) // 2)
+        image = image[:, start : start + cropped_width]
+    elif current_aspect < target_aspect:
+        cropped_height = int(round(width / target_aspect))
+        start = max(0, (height - cropped_height) // 2)
+        image = image[start : start + cropped_height, :]
+    ax.imshow(image)
+    ax.set_axis_off()
 
 
 def trial_key(dataset: str, trial_number: int) -> str:
@@ -1074,6 +1122,58 @@ def benjamini_hochberg(p_values: Iterable[float]) -> np.ndarray:
     return q
 
 
+def random_effects_correlation(
+    fisher_z: Iterable[float],
+    sampling_variance: Iterable[float],
+) -> dict[str, float]:
+    """Random-effects Fisher-z sensitivity with modified Knapp-Hartung inference."""
+    z = np.asarray(list(fisher_z), dtype=float)
+    variance = np.asarray(list(sampling_variance), dtype=float)
+    valid = np.isfinite(z) & np.isfinite(variance) & (variance > 0)
+    z = z[valid]
+    variance = variance[valid]
+    if len(z) < 2:
+        return {
+            "rho": np.nan,
+            "ci_low": np.nan,
+            "ci_high": np.nan,
+            "p": np.nan,
+            "tau2": np.nan,
+        }
+
+    fixed_weights = 1.0 / variance
+    fixed_mean = float(np.average(z, weights=fixed_weights))
+    q_stat = float(np.sum(fixed_weights * (z - fixed_mean) ** 2))
+    c_term = float(
+        fixed_weights.sum()
+        - np.sum(fixed_weights**2) / fixed_weights.sum()
+    )
+    tau2 = max(0.0, (q_stat - (len(z) - 1)) / c_term) if c_term > 0 else 0.0
+
+    random_weights = 1.0 / (variance + tau2)
+    random_mean = float(np.average(z, weights=random_weights))
+    scale = float(
+        np.sum(random_weights * (z - random_mean) ** 2) / (len(z) - 1)
+    )
+    standard_error = float(
+        np.sqrt(max(1.0, scale) / random_weights.sum())
+    )
+    degrees_freedom = len(z) - 1
+    critical = float(stats.t.ppf(0.975, degrees_freedom))
+    low_z = random_mean - critical * standard_error
+    high_z = random_mean + critical * standard_error
+    p_value = float(
+        2 * stats.t.sf(abs(random_mean / standard_error), degrees_freedom)
+    )
+    return {
+        "rho": float(np.tanh(random_mean)),
+        "ci_low": float(np.tanh(low_z)),
+        "ci_high": float(np.tanh(high_z)),
+        "p": p_value,
+        "tau2": float(tau2),
+    }
+
+
 def zscore_within_dataset(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     out = df.copy()
     for col in columns:
@@ -1103,6 +1203,7 @@ def feature_statistics(df: pd.DataFrame) -> pd.DataFrame:
         cohort_kruskal_p = []
         cohort_rho_z = []
         cohort_rho_weights = []
+        cohort_rho_variances = []
         for _, cohort in independent_df.groupby("dataset"):
             cohort = cohort[
                 ["skill_category", "total_procedures", col]
@@ -1135,7 +1236,9 @@ def feature_statistics(df: pd.DataFrame) -> pd.DataFrame:
                     ).statistic
                 )
                 cohort_rho_z.append(np.arctanh(np.clip(rho, -0.999999, 0.999999)))
-                cohort_rho_weights.append(max(len(cohort) - 3, 1))
+                weight = max(len(cohort) - 3, 1)
+                cohort_rho_weights.append(weight)
+                cohort_rho_variances.append(1.0 / weight)
 
         delta = (
             float(np.average(cohort_deltas, weights=cohort_delta_weights))
@@ -1207,6 +1310,10 @@ def feature_statistics(df: pd.DataFrame) -> pd.DataFrame:
         else:
             rho = rho_p = rho_lo = rho_hi = np.nan
             heterogeneity_q = heterogeneity_i2 = np.nan
+        random_effects = random_effects_correlation(
+            cohort_rho_z,
+            cohort_rho_variances,
+        )
         records.append(
             {
                 "feature": col,
@@ -1221,6 +1328,11 @@ def feature_statistics(df: pd.DataFrame) -> pd.DataFrame:
                 "spearman_ci_low": float(rho_lo),
                 "spearman_ci_high": float(rho_hi),
                 "spearman_meta_i2": heterogeneity_i2,
+                "spearman_random_rho": random_effects["rho"],
+                "spearman_random_ci_low": random_effects["ci_low"],
+                "spearman_random_ci_high": random_effects["ci_high"],
+                "spearman_random_p": random_effects["p"],
+                "spearman_random_tau2": random_effects["tau2"],
                 "n_cohorts": int(len(cohort_rho_z)),
                 "n_nonmissing": int(independent_df[col].notna().sum()),
             }
@@ -1709,6 +1821,182 @@ def osats_proxy_scores(df: pd.DataFrame) -> pd.DataFrame:
             )
     pd.DataFrame(rows).to_csv(OUT / "osats_proxy_by_skill.csv", index=False)
     return out
+
+
+def jerk_exclusion_sensitivity(
+    df: pd.DataFrame,
+    proxy: pd.DataFrame,
+    clusters: pd.DataFrame,
+    cluster_summary: dict[str, object],
+) -> dict[str, object]:
+    """Recalculate the score without the duration-dependent normalised-jerk construct."""
+    from sklearn.cluster import KMeans
+    from sklearn.metrics import adjusted_rand_score
+
+    identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
+    reference_mask = identifier_counts.eq(1) & df["total_time"].notna()
+    no_jerk_control = construct_balanced_domain_score(
+        df,
+        OSATS_DOMAIN_CONSTRUCTS["Instrument motion control"][1:],
+        reference_mask,
+    )
+    sensitivity = proxy[
+        [
+            "dataset",
+            "trial_key",
+            "Bimanual coordination",
+            "Task efficiency",
+            "Analysed duration (s)",
+            "Coordination-control composite",
+        ]
+    ].copy()
+    sensitivity["Motion control without normalised jerk"] = no_jerk_control
+    sensitivity["Score without normalised jerk"] = sensitivity[
+        ["Bimanual coordination", "Motion control without normalised jerk"]
+    ].mean(axis=1, skipna=False)
+    sensitivity = sensitivity.dropna(
+        subset=[
+            "Coordination-control composite",
+            "Score without normalised jerk",
+        ]
+    ).merge(
+        clusters[["trial_key", "metric_cluster"]].dropna(
+            subset=["metric_cluster"]
+        ),
+        on="trial_key",
+        how="inner",
+        validate="one_to_one",
+    )
+    if sensitivity.empty:
+        return {"available": False}
+
+    band_codes = {band: i for i, band in enumerate(BAND_ORDER)}
+    baseline_labels = sensitivity["metric_cluster"].map(band_codes).to_numpy(int)
+    thresholds = np.asarray(
+        cluster_summary.get("metric_band_thresholds", []),
+        dtype=float,
+    )
+    if len(thresholds) != 2:
+        return {"available": False}
+
+    alternative_score = sensitivity["Score without normalised jerk"].to_numpy(float)
+    fixed_labels = np.digitize(alternative_score, thresholds)
+    fitted = KMeans(
+        n_clusters=3,
+        n_init=300,
+        random_state=20260618,
+    ).fit(alternative_score.reshape(-1, 1))
+    centres = np.sort(fitted.cluster_centers_.ravel())
+    refit_thresholds = (centres[:-1] + centres[1:]) / 2
+    refit_labels = np.digitize(alternative_score, refit_thresholds)
+
+    score_rho = float(
+        stats.spearmanr(
+            sensitivity["Coordination-control composite"],
+            sensitivity["Score without normalised jerk"],
+        ).statistic
+    )
+    summary_row = {
+        "n": int(len(sensitivity)),
+        "score_spearman_rho": score_rho,
+        "median_absolute_score_change": float(
+            np.median(
+                np.abs(
+                    sensitivity["Score without normalised jerk"]
+                    - sensitivity["Coordination-control composite"]
+                )
+            )
+        ),
+        "fixed_cut_assignment_ari": float(
+            adjusted_rand_score(baseline_labels, fixed_labels)
+        ),
+        "refit_assignment_ari": float(
+            adjusted_rand_score(baseline_labels, refit_labels)
+        ),
+        "refit_lower_cut": float(refit_thresholds[0]),
+        "refit_upper_cut": float(refit_thresholds[1]),
+    }
+    pd.DataFrame([summary_row]).to_csv(
+        OUT / "jerk_exclusion_score_sensitivity.csv",
+        index=False,
+    )
+    sensitivity.to_csv(OUT / "jerk_exclusion_scores.csv", index=False)
+
+    association_rows = []
+    for dataset in DATASET_ORDER:
+        cohort = sensitivity[sensitivity["dataset"] == dataset]
+        if cohort.empty:
+            continue
+        for outcome in ["Analysed duration (s)", "Task efficiency"]:
+            result = stats.spearmanr(
+                cohort["Score without normalised jerk"],
+                cohort[outcome],
+            )
+            ci_low, ci_high = bootstrap_spearman_ci(
+                cohort["Score without normalised jerk"],
+                cohort[outcome],
+            )
+            association_rows.append(
+                {
+                    "dataset": dataset,
+                    "outcome": outcome,
+                    "n": int(len(cohort)),
+                    "spearman_rho": float(result.statistic),
+                    "ci_low": float(ci_low),
+                    "ci_high": float(ci_high),
+                    "p": float(result.pvalue),
+                }
+            )
+    associations = pd.DataFrame(association_rows)
+    associations["q"] = benjamini_hochberg(associations["p"])
+    associations.to_csv(
+        OUT / "jerk_exclusion_contextual_correlations.csv",
+        index=False,
+    )
+
+    (TAB / "jerk_exclusion_score_sensitivity.tex").write_text(
+        "\n".join(
+            [
+                "\\begin{tabular}{rrrrrr}",
+                "\\toprule",
+                "$n$ & Score $\\rho$ & Median $|\\Delta|$ & Fixed-cut ARI & Refit ARI & Refit cuts \\\\",
+                "\\midrule",
+                f"{summary_row['n']} & {summary_row['score_spearman_rho']:.3f} & "
+                f"{summary_row['median_absolute_score_change']:.3f} & "
+                f"{summary_row['fixed_cut_assignment_ari']:.3f} & "
+                f"{summary_row['refit_assignment_ari']:.3f} & "
+                f"{summary_row['refit_lower_cut']:.2f}, {summary_row['refit_upper_cut']:.2f} \\\\",
+                "\\bottomrule",
+                "\\end{tabular}",
+            ]
+        )
+    )
+    table_rows = []
+    for _, row in associations.iterrows():
+        q_text = "$<0.001$" if row["q"] < 0.001 else f"{row['q']:.3f}"
+        table_rows.append(
+            f"{dataset_label(row['dataset'])} & {row['outcome']} & {int(row['n'])} & "
+            f"{row['spearman_rho']:.2f} [{row['ci_low']:.2f}, {row['ci_high']:.2f}] & "
+            f"{q_text} \\\\"
+        )
+    (TAB / "jerk_exclusion_contextual_correlations.tex").write_text(
+        "\n".join(
+            [
+                "\\begin{tabular}{llrrr}",
+                "\\toprule",
+                "Cohort & Contextual outcome & $n$ & Spearman $\\rho$ [95\\% CI] & FDR $q$ \\\\",
+                "\\midrule",
+                *table_rows,
+                "\\bottomrule",
+                "\\end{tabular}",
+            ]
+        )
+    )
+    return {
+        "available": True,
+        "score_comparison": summary_row,
+        "contextual_correlations": associations.to_dict(orient="records"),
+    }
 
 
 def processing_sensitivity(
@@ -2708,100 +2996,54 @@ def plot_cohort(df: pd.DataFrame, phase_trials: pd.DataFrame) -> None:
 
 def plot_task_setup_overview() -> None:
     sample_paths = [
-        (AI_ELT / "docs" / "paper" / "figures" / "dataset_b.png", "Paediatric"),
-        (AI_ELT / "docs" / "paper" / "figures" / "dataset_c.png", "Urology 1"),
-        (AI_ELT / "docs" / "paper" / "figures" / "dataset_a.png", "Urology 2"),
+        FIG / "source" / "task_frames" / "bapes_trial17_frame00300.png",
+        FIG / "source" / "task_frames" / "urology1_test13_frame00100.png",
+        FIG / "source" / "task_frames" / "urology2_trial34_frame00500.png",
     ]
-    if not all(path.exists() for path, _ in sample_paths):
+    if not all(path.exists() for path in sample_paths):
         return
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.8))
-    for ax, (path, label), panel in zip(axes, sample_paths, "abc"):
-        img = plt.imread(path)
-        ax.imshow(img)
-        ax.set_axis_off()
-        ax.text(
-            0.02,
-            0.08,
-            label,
-            transform=ax.transAxes,
-            fontsize=8,
-            weight="bold",
-            color="white",
-            bbox=dict(facecolor="black", alpha=0.55, edgecolor="none", pad=2),
-        )
-        panel_label(ax, panel)
-    fig.tight_layout(w_pad=0.2)
+    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.25))
+    for ax, path, panel in zip(axes, sample_paths, "abc"):
+        show_center_crop(ax, path)
+        image_panel_label(ax, panel, y=-0.07)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.12, wspace=0.03)
     save_fig(fig, "fig0_task_setup_overview")
 
 
-def plot_training_systems_placeholder() -> None:
-    systems = [
-        {
-            "name": "MISTELS",
-            "subtitle": "Bench-station laparoscopic skills",
-            "items": ["Peg transfer", "Pattern cutting", "Ligating loop", "Suturing tasks"],
-            "note": "Insert representative station or official task photograph",
-        },
-        {
-            "name": "FLS",
-            "subtitle": "Fundamentals of Laparoscopic Surgery",
-            "items": ["Standard timed tasks", "Error penalties", "Proficiency targets", "Certification context"],
-            "note": "Insert FLS box trainer or task-board image",
-        },
-        {
-            "name": "E-BLUS",
-            "subtitle": "European Basic Laparoscopic Urological Skills",
-            "items": ["Urology-focused dry-lab tasks", "Peg transfer", "Cutting and suturing", "Exam pathway"],
-            "note": "Insert E-BLUS exam or task-station image",
-        },
+def plot_training_systems_context() -> None:
+    task_paths = [
+        FIG / "source" / "training_tasks" / "fls_peg_transfer.png",
+        FIG / "source" / "training_tasks" / "fls_circle_cutting.png",
+        FIG / "source" / "training_tasks" / "fls_ligation_loop.png",
+        FIG / "source" / "training_tasks" / "fls_extracorporeal_knot.png",
+        FIG / "source" / "training_tasks" / "fls_intracorporeal_knot.png",
+        FIG / "source" / "training_tasks" / "eblus_needle_guidance.png",
     ]
-    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.8))
-    for ax, system, panel in zip(axes, systems, "abc"):
-        ax.set_axis_off()
-        ax.add_patch(Rectangle((0.04, 0.24), 0.92, 0.58, facecolor="#F7F7F7", edgecolor="#555555", lw=0.9))
-        ax.text(0.5, 0.72, system["name"], ha="center", va="center", fontsize=13, weight="bold")
-        ax.text(0.5, 0.61, system["subtitle"], ha="center", va="center", fontsize=7.5, color="#333333", wrap=True)
-        y = 0.50
-        for item in system["items"]:
-            ax.text(0.12, y, f"- {item}", ha="left", va="center", fontsize=6.9)
-            y -= 0.085
-        ax.text(
-            0.5,
-            0.14,
-            system["note"],
-            ha="center",
-            va="center",
-            fontsize=6.4,
-            color="#555555",
-            style="italic",
-            wrap=True,
-        )
-        panel_label(ax, panel)
-    fig.tight_layout(w_pad=0.4)
-    save_fig(fig, "fig0_training_systems_placeholder")
+    if not all(path.exists() for path in task_paths):
+        return
+    fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.25))
+    for ax, path, panel in zip(axes.flat, task_paths, "abcdef"):
+        show_center_crop(ax, path)
+        image_panel_label(ax, panel, y=-0.07)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.07, wspace=0.03, hspace=0.18)
+    save_fig(fig, "fig0_training_systems")
 
 
-def plot_collection_setup_placeholder() -> None:
-    setups = [
-        ("Paediatric", "7 DoF + jaw", "Paediatric dry-lab course", "Insert photograph of BAPES collection station"),
-        ("Urology 1", "6 DoF", "2023 urology cohort", "Insert photograph of original 6 DoF rig"),
-        ("Urology 2", "7 DoF + jaw", "2024 urology cohort", "Insert photograph of updated 7 DoF rig"),
+def plot_collection_setups() -> None:
+    setup_paths = [
+        FIG / "source" / "collection_setups" / "setup_bapes_2024.jpg",
+        FIG / "source" / "collection_setups" / "setup_urology_2023.jpeg",
+        FIG / "source" / "collection_setups" / "setup_urology_2024.jpeg",
+        FIG / "source" / "collection_setups" / "setup_urology_2025.jpeg",
     ]
-    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.8))
-    for ax, (cohort, sensing, context, note), panel in zip(axes, setups, "abc"):
-        ax.set_axis_off()
-        ax.add_patch(Rectangle((0.05, 0.22), 0.90, 0.60, facecolor="#F4F8FB", edgecolor="#4A4A4A", lw=0.9))
-        ax.plot([0.18, 0.45], [0.40, 0.56], color="#0072B2", lw=2.2)
-        ax.plot([0.82, 0.55], [0.40, 0.56], color="#009E73", lw=2.2)
-        ax.add_patch(Rectangle((0.36, 0.50), 0.28, 0.10, facecolor="#DDDDDD", edgecolor="#777777", lw=0.6))
-        ax.add_patch(Rectangle((0.43, 0.57), 0.14, 0.08, facecolor="#BBBBBB", edgecolor="#777777", lw=0.6))
-        ax.text(0.5, 0.76, cohort, ha="center", va="center", fontsize=11, weight="bold")
-        ax.text(0.5, 0.66, sensing, ha="center", va="center", fontsize=8)
-        ax.text(0.5, 0.30, context, ha="center", va="center", fontsize=7.2)
-        ax.text(0.5, 0.13, note, ha="center", va="center", fontsize=6.3, style="italic", color="#555555", wrap=True)
-        panel_label(ax, panel)
-    fig.tight_layout(w_pad=0.35)
-    save_fig(fig, "fig0_collection_setups_placeholder")
+    if not all(path.exists() for path in setup_paths):
+        return
+    fig, axes = plt.subplots(2, 2, figsize=(7.2, 4.45))
+    for ax, path, panel in zip(axes.flat, setup_paths, "abcd"):
+        show_center_crop(ax, path)
+        image_panel_label(ax, panel, y=-0.06)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.07, wspace=0.025, hspace=0.15)
+    save_fig(fig, "fig0_collection_setups")
 
 
 def plot_peg_transfer_cycle_placeholder() -> None:
@@ -2844,12 +3086,12 @@ def plot_peg_transfer_cycle_placeholder() -> None:
 
         ax.text(0.50, 0.91, name, ha="center", va="center", fontsize=10, weight="bold")
         ax.text(0.50, 0.82, subtitle, ha="center", va="center", fontsize=6.9, color="#333333", wrap=True)
-        panel_label(ax, panel)
+        image_panel_label(ax, panel, y=-0.02)
 
     fig, axes = plt.subplots(2, 3, figsize=(7.4, 4.8))
     for ax, stage, panel in zip(axes.flat, stages, "abcdef"):
         draw_scene(ax, stage, panel)
-    fig.tight_layout(w_pad=0.25, h_pad=0.35)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.06, wspace=0.04, hspace=0.22)
     save_fig(fig, "fig0_peg_transfer_cycle_placeholder")
 
 
@@ -3513,7 +3755,7 @@ def plot_tool_specific_motion_boxplots(df: pd.DataFrame) -> None:
                 patch.set_alpha(0.65)
             direction = "$\\uparrow$" if higher_is_more else "$\\downarrow$"
             ax.set_title(f"{title} ({direction})", fontsize=8)
-            ax.set_xticks([0, 1], ["Tool 1", "Tool 2"])
+            ax.set_xticks([0, 1], ["Left tool", "Right tool"])
             ax.set_ylabel(ylabel)
             panel_label(ax, label)
         for ax in axes[len(panels) :]:
@@ -3548,8 +3790,8 @@ def plot_sorted_participant_bars(df: pd.DataFrame, proxy: pd.DataFrame) -> None:
         ("Coordination-control composite", "Coordination and\ncontrol score ($\\uparrow$)", True),
         ("bimanual_correlation", "Bimanual\ncorrelation ($\\uparrow$)", True),
         ("combined_idle_ratio", "Idle fraction ($\\downarrow$)", False),
-        ("tool1_normalized_jerk", "Tool 1 normalised\njerk ($\\downarrow$)", False),
-        ("tool2_normalized_jerk", "Tool 2 normalised\njerk ($\\downarrow$)", False),
+        ("tool1_normalized_jerk", "Left tool normalised\njerk ($\\downarrow$)", False),
+        ("tool2_normalized_jerk", "Right tool normalised\njerk ($\\downarrow$)", False),
         ("total_time", "Analysed\nduration ($\\downarrow$)", False),
     ]
     fig, axes = plt.subplots(len(specs), len(DATASET_ORDER), figsize=(9.4, 9.2), sharex=False)
@@ -3608,10 +3850,10 @@ def plot_cohort_radar(df: pd.DataFrame) -> None:
         ("simultaneous_motion_ratio", "Simultaneous\nmotion", 1),
         ("combined_idle_ratio", "Low idle\ntime", -1),
         ("total_time", "Shorter\ntrial", -1),
-        ("tool1_normalized_jerk", "Tool 1\nnormalised jerk", -1),
-        ("tool2_normalized_jerk", "Tool 2\nnormalised jerk", -1),
-        ("tool1_working_volume", "Tool 1 compact\nworkspace", -1),
-        ("tool2_working_volume", "Tool 2 compact\nworkspace", -1),
+        ("tool1_normalized_jerk", "Left tool\nnormalised jerk", -1),
+        ("tool2_normalized_jerk", "Right tool\nnormalised jerk", -1),
+        ("tool1_working_volume", "Left tool compact\nworkspace", -1),
+        ("tool2_working_volume", "Right tool compact\nworkspace", -1),
     ]
     norm = _normalised_cohort_means(df, specs)
     if norm.empty:
@@ -3654,20 +3896,20 @@ def plot_dataset_metric_matrix(df: pd.DataFrame, proxy: pd.DataFrame) -> None:
         ("combined_idle_ratio", "Idle fraction", -1),
         ("tool_distance_cv", "Tool distance variability", -1),
         ("tool_close_proximity_ratio", "Close proximity", -1),
-        ("tool1_normalized_jerk", "Tool 1 normalised jerk", -1),
-        ("tool2_normalized_jerk", "Tool 2 normalised jerk", -1),
-        ("tool1_avg_speed", "Tool 1 speed", 1),
-        ("tool2_avg_speed", "Tool 2 speed", 1),
-        ("tool1_path_length", "Tool 1 path length", -1),
-        ("tool2_path_length", "Tool 2 path length", -1),
-        ("tool1_rotation_per_path", "Tool 1 rotation economy", -1),
-        ("tool2_rotation_per_path", "Tool 2 rotation economy", -1),
-        ("tool1_range_z", "Tool 1 depth range", -1),
-        ("tool2_range_z", "Tool 2 depth range", -1),
-        ("tool1_working_volume", "Tool 1 working volume", -1),
-        ("tool2_working_volume", "Tool 2 working volume", -1),
-        ("tool1_num_speed_peaks", "Tool 1 speed peaks", -1),
-        ("tool2_num_speed_peaks", "Tool 2 speed peaks", -1),
+        ("tool1_normalized_jerk", "Left tool normalised jerk", -1),
+        ("tool2_normalized_jerk", "Right tool normalised jerk", -1),
+        ("tool1_avg_speed", "Left tool speed", 1),
+        ("tool2_avg_speed", "Right tool speed", 1),
+        ("tool1_path_length", "Left tool path length", -1),
+        ("tool2_path_length", "Right tool path length", -1),
+        ("tool1_rotation_per_path", "Left tool rotation economy", -1),
+        ("tool2_rotation_per_path", "Right tool rotation economy", -1),
+        ("tool1_range_z", "Left tool depth range", -1),
+        ("tool2_range_z", "Right tool depth range", -1),
+        ("tool1_working_volume", "Left tool working volume", -1),
+        ("tool2_working_volume", "Right tool working volume", -1),
+        ("tool1_num_speed_peaks", "Left tool speed peaks", -1),
+        ("tool2_num_speed_peaks", "Right tool speed peaks", -1),
     ]
     rows = []
     for col, label, direction in specs:
@@ -3997,13 +4239,13 @@ def plot_cohort_effect_forest(df: pd.DataFrame) -> None:
     identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
     df = df.loc[identifier_counts.eq(1)].copy()
     specs = [
-        ("tool2_avg_speed", "Tool 2 speed", 1),
-        ("tool1_avg_speed", "Tool 1 speed", 1),
+        ("tool2_avg_speed", "Right tool speed", 1),
+        ("tool1_avg_speed", "Left tool speed", 1),
         ("bimanual_correlation", "Bimanual correlation", 1),
-        ("tool2_num_speed_peaks", "Tool 2 stop-start peaks", -1),
-        ("tool1_num_speed_peaks", "Tool 1 stop-start peaks", -1),
+        ("tool2_num_speed_peaks", "Right tool stop-start peaks", -1),
+        ("tool1_num_speed_peaks", "Left tool stop-start peaks", -1),
         ("total_time", "Analysed duration", -1),
-        ("tool2_range_z", "Tool 2 depth range", -1),
+        ("tool2_range_z", "Right tool depth range", -1),
     ]
     rows = []
     rng = np.random.default_rng(20260618)
@@ -4315,6 +4557,8 @@ def write_tables(
     independent_keys = set(df.loc[identifier_counts.eq(1), "trial_key"])
     phase_inferential = phase_trials[phase_trials["trial_key"].isin(independent_keys)]
     analysis_unit_rows = [
+        "Public Zenodo version 1.0 & 37 & 37 & Currently released subset \\\\",
+        "Earlier LASK report & 114 & -- & Published collection summary \\\\",
         f"Dataset inventory & {len(df)} & {df['trial_key'].nunique()} & All available recordings \\\\",
         f"Primary inferential set & {int(identifier_counts.eq(1).sum())} & "
         f"{df.loc[identifier_counts.eq(1), 'trial_key'].nunique()} & "
@@ -4328,7 +4572,7 @@ def write_tables(
     (TAB / "analysis_units.tex").write_text(
         "\n".join(
             [
-                    "\\begin{tabular}{lrrL{5.0cm}}",
+                "\\begin{tabular}{lrrL{5.0cm}}",
                 "\\toprule",
                 "Analysis set & Recordings & Study IDs & Use \\\\",
                 "\\midrule",
@@ -4338,6 +4582,34 @@ def write_tables(
             ]
         )
     )
+
+    bimanual = feature_stats.loc[
+        feature_stats["feature"].eq("bimanual_correlation")
+    ]
+    if not bimanual.empty:
+        row = bimanual.iloc[0]
+        (TAB / "bimanual_meta_sensitivity.tex").write_text(
+            "\n".join(
+                [
+                    "\\begin{tabular}{lllll}",
+                    "\\toprule",
+                    "Model & Spearman $\\rho$ & 95\\% CI & Evidence value & Heterogeneity \\\\",
+                    "\\midrule",
+                    "Fixed effect (primary) & "
+                    f"{row['spearman_rho_procedures']:.2f} & "
+                    f"[{row['spearman_ci_low']:.2f}, {row['spearman_ci_high']:.2f}] & "
+                    f"FDR $q={row['spearman_q']:.3f}$ & "
+                    f"$I^2={row['spearman_meta_i2']:.1f}\\%$ \\\\",
+                    "Random effects (sensitivity) & "
+                    f"{row['spearman_random_rho']:.2f} & "
+                    f"[{row['spearman_random_ci_low']:.2f}, {row['spearman_random_ci_high']:.2f}] & "
+                    f"Unadjusted $p={row['spearman_random_p']:.3f}$ & "
+                    f"$\\tau^2={row['spearman_random_tau2']:.3f}$ \\\\",
+                    "\\bottomrule",
+                    "\\end{tabular}",
+                ]
+            )
+        )
 
     phase_rows = []
     for ds in DATASET_ORDER:
@@ -4768,7 +5040,7 @@ def write_tables(
                 [
                     "\\begin{tabular}{lrrrrr}",
                     "\\toprule",
-                    "Phase & Trials & Duration (s) & Tool 1 speed & Tool 2 speed & Combined path rate \\\\",
+                    "Phase & Trials & Duration (s) & Left tool speed & Right tool speed & Combined path rate \\\\",
                     "\\midrule",
                     *rows,
                     "\\bottomrule",
@@ -4915,6 +5187,12 @@ def main() -> None:
     adjusted_models = cohort_adjusted_models(all_df, proxy)
     feature_dictionary = write_feature_dictionary(all_df)
     clusters, cluster_summary = kmeans_skill_clusters(all_df, proxy)
+    jerk_checks = jerk_exclusion_sensitivity(
+        all_df,
+        proxy,
+        clusters,
+        cluster_summary,
+    )
     trim_validation = trimming_rule_validation(frames, clusters)
     processing_checks = processing_sensitivity(
         all_df,
@@ -4928,7 +5206,10 @@ def main() -> None:
     motion_sample = load_origin_motion(all_df)
     phase_statistics(trials, cycles, frames)
     phase_kinematics = phase_specific_kinematics(frames, clusters)
+    plot_training_systems_context()
+    plot_collection_setups()
     plot_task_setup_overview()
+    plot_peg_transfer_cycle_placeholder()
     plot_cohort(all_df, trials)
     plot_feature_effects(feature_stats)
     plot_phase_timing(cycles, trials)
@@ -4971,6 +5252,7 @@ def main() -> None:
         "processing_sensitivity": processing_checks.to_dict(
             orient="records"
         ),
+        "jerk_exclusion_sensitivity": jerk_checks,
         "classification": classification,
         "metric_band_classification": metric_band_classification,
         "kmeans": cluster_summary,

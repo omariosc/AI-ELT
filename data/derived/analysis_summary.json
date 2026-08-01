@@ -79,6 +79,80 @@
       "refit_assignment_ari": 0.42755379100614965
     }
   ],
+  "jerk_exclusion_sensitivity": {
+    "available": true,
+    "score_comparison": {
+      "n": 107,
+      "score_spearman_rho": 0.8534750897713493,
+      "median_absolute_score_change": 0.16666666666666607,
+      "fixed_cut_assignment_ari": 0.35145042023250617,
+      "refit_assignment_ari": 0.35137241004584474,
+      "refit_lower_cut": 2.638371657875968,
+      "refit_upper_cut": 3.370383528280696
+    },
+    "contextual_correlations": [
+      {
+        "dataset": "BAPES2024",
+        "outcome": "Analysed duration (s)",
+        "n": 28,
+        "spearman_rho": 0.17350848385331144,
+        "ci_low": -0.27254975235417744,
+        "ci_high": 0.5715570720819966,
+        "p": 0.3772439309220052,
+        "q": 0.7544878618440104
+      },
+      {
+        "dataset": "BAPES2024",
+        "outcome": "Task efficiency",
+        "n": 28,
+        "spearman_rho": -0.004105652152858856,
+        "ci_low": -0.44270423134403203,
+        "ci_high": 0.4254652766412527,
+        "p": 0.9834573635984055,
+        "q": 0.9834573635984055
+      },
+      {
+        "dataset": "6DOF2023",
+        "outcome": "Analysed duration (s)",
+        "n": 24,
+        "spearman_rho": -0.025217391304347827,
+        "ci_low": -0.4031095702836584,
+        "ci_high": 0.3888834650666649,
+        "p": 0.9068896173989752,
+        "q": 0.9834573635984055
+      },
+      {
+        "dataset": "6DOF2023",
+        "outcome": "Task efficiency",
+        "n": 24,
+        "spearman_rho": 0.09999999999999999,
+        "ci_low": -0.33342807170966327,
+        "ci_high": 0.49057138771280817,
+        "p": 0.6419932296067887,
+        "q": 0.9629898444101831
+      },
+      {
+        "dataset": "7DOF2024",
+        "outcome": "Analysed duration (s)",
+        "n": 55,
+        "spearman_rho": -0.2853329004558957,
+        "ci_low": -0.5062436108880163,
+        "ci_high": -0.0319704958111179,
+        "p": 0.03472109534051426,
+        "q": 0.10416328602154279
+      },
+      {
+        "dataset": "7DOF2024",
+        "outcome": "Task efficiency",
+        "n": 55,
+        "spearman_rho": 0.3233999567068332,
+        "ci_low": 0.08050184610713806,
+        "ci_high": 0.5392765631163007,
+        "p": 0.016021720567528316,
+        "q": 0.09613032340516989
+      }
+    ]
+  },
   "classification": {
     "available": true,
     "features": [
@@ -859,6 +933,11 @@
       "spearman_ci_low": 0.07356633757928907,
       "spearman_ci_high": 0.43794014383705293,
       "spearman_meta_i2": 59.69385918068588,
+      "spearman_random_rho": 0.2117074443816667,
+      "spearman_random_ci_low": -0.46454045903550795,
+      "spearman_random_ci_high": 0.7319905519250864,
+      "spearman_random_p": 0.32663456762791443,
+      "spearman_random_tau2": 0.049756300888148405,
       "n_cohorts": 3,
       "n_nonmissing": 107,
       "kruskal_q": 0.3170324957516792,
@@ -866,7 +945,7 @@
     },
     {
       "feature": "tool2_avg_speed",
-      "label": "Tool 2 speed",
+      "label": "Right tool speed",
       "cliffs_delta_novice_expert": -0.43953934740882916,
       "delta_ci_low": -0.6852207293666027,
       "delta_ci_high": -0.16314779270633398,
@@ -877,6 +956,11 @@
       "spearman_ci_low": 0.07384779717900485,
       "spearman_ci_high": 0.4381688360883283,
       "spearman_meta_i2": 0.0,
+      "spearman_random_rho": 0.26545918253608347,
+      "spearman_random_ci_low": -0.16124160373639043,
+      "spearman_random_ci_high": 0.6085440944961099,
+      "spearman_random_p": 0.11469809574663309,
+      "spearman_random_tau2": 0.0,
       "n_cohorts": 3,
       "n_nonmissing": 107,
       "kruskal_q": 0.3170324957516792,
@@ -884,7 +968,7 @@
     },
     {
       "feature": "tool1_avg_speed",
-      "label": "Tool 1 speed",
+      "label": "Left tool speed",
       "cliffs_delta_novice_expert": -0.3666026871401152,
       "delta_ci_low": -0.6314779270633397,
       "delta_ci_high": -0.08253358925143954,
@@ -895,6 +979,11 @@
       "spearman_ci_low": 0.011442656610917675,
       "spearman_ci_high": 0.3862823505464995,
       "spearman_meta_i2": 0.0,
+      "spearman_random_rho": 0.20642377607265003,
+      "spearman_random_ci_low": -0.22146914738410423,
+      "spearman_random_ci_high": 0.5676621028592012,
+      "spearman_random_p": 0.17388627970199558,
+      "spearman_random_tau2": 0.0,
       "n_cohorts": 3,
       "n_nonmissing": 107,
       "kruskal_q": 0.3170324957516792,
@@ -902,7 +991,7 @@
     },
     {
       "feature": "tool2_range_z",
-      "label": "Tool 2 depth range",
+      "label": "Right tool depth range",
       "cliffs_delta_novice_expert": -0.362763915547025,
       "delta_ci_low": -0.6353166986564299,
       "delta_ci_high": -0.05566218809980806,
@@ -913,6 +1002,11 @@
       "spearman_ci_low": 0.04543599067993563,
       "spearman_ci_high": 0.4148432170028269,
       "spearman_meta_i2": 0.0,
+      "spearman_random_rho": 0.23875854482084943,
+      "spearman_random_ci_low": -0.18888085512853242,
+      "spearman_random_ci_high": 0.5902767842364478,
+      "spearman_random_p": 0.13751981632359336,
+      "spearman_random_tau2": 0.0,
       "n_cohorts": 3,
       "n_nonmissing": 107,
       "kruskal_q": 0.45493281403401425,
@@ -920,7 +1014,7 @@
     },
     {
       "feature": "tool2_working_volume",
-      "label": "Tool 2 working volume",
+      "label": "Right tool working volume",
       "cliffs_delta_novice_expert": -0.2629558541266795,
       "delta_ci_low": -0.5470249520153551,
       "delta_ci_high": 0.02111324376199616,
@@ -931,6 +1025,11 @@
       "spearman_ci_low": -0.0030923734558430975,
       "spearman_ci_high": 0.3738467701508323,
       "spearman_meta_i2": 0.0,
+      "spearman_random_rho": 0.19246671234055343,
+      "spearman_random_ci_low": -0.2352464174416241,
+      "spearman_random_ci_high": 0.5577292402707107,
+      "spearman_random_p": 0.19346141846760925,
+      "spearman_random_tau2": 0.0,
       "n_cohorts": 3,
       "n_nonmissing": 107,
       "kruskal_q": 0.3170324957516792,
