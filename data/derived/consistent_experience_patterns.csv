@@ -1,0 +1,5 @@
+feature,label,direction,interpretation,minimum_favourable_median_change_pct,maximum_favourable_median_change_pct,oriented_meta_rho,oriented_meta_ci_low,oriented_meta_ci_high,spearman_q
+total_time,Analysed duration,$\downarrow$,shorter analysed task interval,12.659217877094962,23.199070487993797,0.3271697623894671,0.1407253988614638,0.4912035168897321,0.0112031681217978
+tool1_normalized_jerk,Left tool normalised jerk,$\downarrow$,smoother left-tool motion,26.26992003960734,43.13835811506754,0.3380020757981303,0.1526429133399948,0.500389104235357,0.0112031681217978
+tool2_normalized_jerk,Right tool normalised jerk,$\downarrow$,smoother right-tool motion,2.5944651597664112,41.67706685225886,0.3009585052152936,0.1121100756037438,0.4688249105810884,0.0203814750131876
+tool2_num_speed_peaks,Right tool speed peaks,$\downarrow$,fewer right-tool stop-start speed peaks,13.043478260869565,15.92356687898089,0.2880292104710785,0.0981093391515713,0.4577062141617639,0.0229859161124934

@@ -1,12 +1,20 @@
 {
   "analysis_script": {
     "path": "scripts/build_scirep_analysis.py",
-    "sha256": "eb4b0267e2d50a0ecfe1bcc7ce303215d21f3a7ecb33143a95647db1bcd53055"
+    "sha256": "488802ba7f2695a87830b09fa1d963b31fb6db96ebcc96212f360d57b3fcf94b"
+  },
+  "experience_benchmark_script": {
+    "path": "scripts/benchmark_experience_models.py",
+    "sha256": "5d1784b17b6399dcc382ff52e7fe59bb2795b5a71b3c16cdd1748480156c0c38"
+  },
+  "cohort_calibration_benchmark_script": {
+    "path": "scripts/benchmark_cohort_calibration.py",
+    "sha256": "85620a288a629a869c4244552e7d35e677a7738004bf36b2e911c161fbbaff5e"
   },
   "python": {
     "executable": "python3.14",
     "version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
-    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O"
+    "platform": "macOS-26.6.1-arm64-arm-64bit-Mach-O"
   },
   "packages": {
     "numpy": "2.4.4",
@@ -58,6 +66,8 @@
   "random_seeds": {
     "bootstrap_and_sampling": 20260618,
     "classification_cv": 13,
+    "nested_experience_prediction": 20260817,
+    "cohort_calibration_prediction": 20260817,
     "pca": 20260618,
     "kmeans": 20260618
   }

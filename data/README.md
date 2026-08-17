@@ -26,6 +26,9 @@ Important files:
 | `jerk_exclusion_contextual_correlations.csv` | Within-cohort duration and task-efficiency checks for the score without normalised jerk |
 | `trimming_rule_validation.csv` | Automatic versus labelled task-boundary agreement |
 | `phase_kinematics_summary.csv` | Aggregate phase-specific duration, speed, and path-rate summaries |
+| `jaw_voltage_statistics.csv` | Within-cohort associations for seven relative jaw measurements |
+| `jaw_smoothing_sensitivity.csv` | Jaw-association sensitivity across three smoothing windows |
+| `jaw_phase_comparisons.csv` | Paired comparisons of relative aperture change across task phases |
 
 ## Inputs required by the full script
 
@@ -55,6 +58,11 @@ outputs/
 └── ssl/origin/origin_data/ORIGIN_ALL/
     └── <recording>.json
 ```
+
+The jaw analysis also reads each sensor-equipped recording's `label.json`
+under `BAPES2024/` or `7DOF2024/`. These files provide frame number and the two
+handle-voltage channels. The script repairs legacy trailing commas while
+loading but does not alter the source files.
 
 The per-recording JSON files contain a dense `features` matrix. Its first
 14 columns are:

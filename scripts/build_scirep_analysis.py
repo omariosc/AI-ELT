@@ -71,6 +71,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -393,12 +394,20 @@ def panel_label(ax: plt.Axes, label: str) -> None:
     ax.text(-0.12, 1.03, label, transform=ax.transAxes, fontsize=10, fontweight="bold")
 
 
-def image_panel_label(ax: plt.Axes, label: str, y: float = -0.08) -> None:
+def image_panel_label(
+    ax: plt.Axes,
+    label: str,
+    y: float = -0.08,
+    title: str | None = None,
+) -> None:
     """Place bracketed labels below photographic or schematic panels."""
+    panel_text = f"({label})"
+    if title:
+        panel_text = f"{panel_text} {title}"
     ax.text(
         0.5,
         y,
-        f"({label})",
+        panel_text,
         transform=ax.transAxes,
         ha="center",
         va="top",
@@ -1451,6 +1460,140 @@ def cohort_adjusted_models(df: pd.DataFrame, proxy: pd.DataFrame) -> pd.DataFram
         out["procedure_q"] = benjamini_hochberg(out["procedure_p"])
     out.to_csv(OUT / "cohort_adjusted_models.csv", index=False)
     return out
+
+
+def duration_adjusted_feature_analysis(df: pd.DataFrame) -> pd.DataFrame:
+    """Estimate procedure associations remaining after duration and cohort adjustment."""
+    identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
+    use_df = df.loc[identifier_counts.eq(1)].copy()
+    log_procedures = np.log10(
+        pd.to_numeric(use_df["total_procedures"], errors="coerce") + 1
+    )
+    log_duration = np.log(pd.to_numeric(use_df["total_time"], errors="coerce"))
+
+    def within_cohort_z(values: pd.Series, cohorts: pd.Series) -> pd.Series:
+        def standardise(group: pd.Series) -> pd.Series:
+            spread = group.std(ddof=0)
+            if not np.isfinite(spread) or spread < 1e-12:
+                return pd.Series(np.nan, index=group.index)
+            return (group - group.mean()) / spread
+
+        return values.groupby(cohorts, observed=True).transform(standardise)
+
+    procedure_z = within_cohort_z(log_procedures, use_df["dataset"])
+    duration_z = within_cohort_z(log_duration, use_df["dataset"])
+    rows: list[dict[str, object]] = []
+    rng = np.random.default_rng(20260817)
+    for feature, label in FEATURES.items():
+        if feature == "total_time" or feature not in use_df:
+            continue
+        values = pd.to_numeric(use_df[feature], errors="coerce")
+        arrow, _ = FEATURE_DIRECTIONS.get(feature, ("$\\uparrow$", ""))
+        if "\\downarrow" in arrow:
+            values = -values
+        outcome_z = within_cohort_z(values, use_df["dataset"])
+        analysis = pd.DataFrame(
+            {
+                "dataset": use_df["dataset"].astype(str),
+                "outcome": outcome_z,
+                "procedure": procedure_z,
+                "duration": duration_z,
+            }
+        ).replace([np.inf, -np.inf], np.nan).dropna()
+        if len(analysis) < 20 or analysis["outcome"].std(ddof=0) < 1e-12:
+            continue
+
+        outcome = analysis["outcome"].to_numpy(float)
+        procedure = analysis["procedure"].to_numpy(float)
+        duration = analysis["duration"].to_numpy(float)
+        cohort_values = analysis["dataset"].to_numpy(str)
+        cohort_dummies = pd.get_dummies(
+            analysis["dataset"], drop_first=True, dtype=float
+        ).to_numpy()
+        reduced = np.column_stack(
+            [np.ones(len(analysis)), duration, cohort_dummies]
+        )
+        full = np.column_stack([reduced, procedure])
+        reduced_beta, reduced_r2 = ols_fit(reduced, outcome)
+        full_beta, full_r2 = ols_fit(full, outcome)
+        coefficient = float(full_beta[-1])
+        reduced_sse = float(np.sum((outcome - reduced @ reduced_beta) ** 2))
+        full_sse = float(np.sum((outcome - full @ full_beta) ** 2))
+        partial_r2 = (
+            max(0.0, (reduced_sse - full_sse) / reduced_sse)
+            if reduced_sse > 0
+            else np.nan
+        )
+
+        cohort_indices = [
+            np.flatnonzero(cohort_values == cohort)
+            for cohort in np.unique(cohort_values)
+        ]
+        bootstrap = np.empty(3000, dtype=float)
+        for index in range(len(bootstrap)):
+            sample = np.concatenate(
+                [rng.choice(indices, size=len(indices), replace=True) for indices in cohort_indices]
+            )
+            bootstrap[index] = ols_fit(full[sample], outcome[sample])[0][-1]
+        ci_low, ci_high = np.nanpercentile(bootstrap, [2.5, 97.5])
+
+        reduced_fit = reduced @ reduced_beta
+        reduced_residual = outcome - reduced_fit
+        permuted = np.empty(5000, dtype=float)
+        for index in range(len(permuted)):
+            shuffled = reduced_residual.copy()
+            for indices in cohort_indices:
+                shuffled[indices] = rng.permutation(shuffled[indices])
+            permuted_outcome = reduced_fit + shuffled
+            permuted[index] = ols_fit(full, permuted_outcome)[0][-1]
+        probability = float(
+            (1 + np.sum(np.abs(permuted) >= abs(coefficient)))
+            / (len(permuted) + 1)
+        )
+        rows.append(
+            {
+                "feature": feature,
+                "label": label,
+                "n": int(len(analysis)),
+                "adjusted_procedure_beta": coefficient,
+                "ci_low": float(ci_low),
+                "ci_high": float(ci_high),
+                "partial_r2": float(partial_r2),
+                "permutation_p": probability,
+            }
+        )
+
+    result = pd.DataFrame(rows)
+    result["permutation_q"] = benjamini_hochberg(result["permutation_p"])
+    result = result.sort_values(
+        ["permutation_q", "permutation_p", "adjusted_procedure_beta"],
+        ascending=[True, True, False],
+    )
+    result.to_csv(OUT / "duration_adjusted_feature_analysis.csv", index=False)
+    table_rows = []
+    for _, row in result.iterrows():
+        estimate = (
+            f"{row['adjusted_procedure_beta']:+.2f} "
+            f"[{row['ci_low']:+.2f}, {row['ci_high']:+.2f}]"
+        )
+        table_rows.append(
+            f"{row['label']} & {estimate} & {row['partial_r2']:.3f} & "
+            f"{row['permutation_p']:.3f} & {row['permutation_q']:.3f} \\\\"
+        )
+    (TAB / "duration_adjusted_feature_analysis.tex").write_text(
+        "\n".join(
+            [
+                "\\begin{tabular}{lrrrr}",
+                "\\toprule",
+                "Measurement & Adjusted coefficient $\\uparrow$ [95\\% CI] & Partial $R^2$ & $p$ & $q$ \\\\ ",
+                "\\midrule",
+                *table_rows,
+                "\\bottomrule",
+                "\\end{tabular}",
+            ]
+        )
+    )
+    return result
 
 
 def write_feature_dictionary(df: pd.DataFrame) -> pd.DataFrame:
@@ -2895,7 +3038,8 @@ def trimming_rule_validation(
             [
                 "\\begin{tabular}{lrrrrr}",
                 "\\toprule",
-                "Cohort & $n$ & Start error (s) & End error (s) & Duration error (s) & Interval overlap \\\\",
+                "Cohort & $n$ & Start error (s) $\\downarrow$ & End error (s) $\\downarrow$ & "
+                "Duration error (s) $\\downarrow$ & Interval overlap $\\uparrow$ \\\\",
                 "\\midrule",
                 *table_rows,
                 "\\bottomrule",
@@ -2999,12 +3143,13 @@ def plot_task_setup_overview() -> None:
         FIG / "source" / "task_frames" / "urology1_test13_frame00100.png",
         FIG / "source" / "task_frames" / "urology2_trial34_frame00500.png",
     ]
+    cohort_names = ["Paediatric", "Urology 1", "Urology 2"]
     if not all(path.exists() for path in sample_paths):
         return
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.25))
-    for ax, path, panel in zip(axes, sample_paths, "abc"):
+    for ax, path, panel, cohort_name in zip(axes, sample_paths, "abc", cohort_names):
         show_center_crop(ax, path)
-        image_panel_label(ax, panel, y=-0.07)
+        image_panel_label(ax, panel, y=-0.07, title=cohort_name)
     fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.12, wspace=0.03)
     save_fig(fig, "fig0_task_setup_overview")
 
@@ -3016,15 +3161,28 @@ def plot_training_systems_context() -> None:
         FIG / "source" / "training_tasks" / "fls_ligation_loop.png",
         FIG / "source" / "training_tasks" / "fls_extracorporeal_knot.png",
         FIG / "source" / "training_tasks" / "fls_intracorporeal_knot.png",
-        FIG / "source" / "training_tasks" / "eblus_needle_guidance.png",
+        FIG / "source" / "training_tasks" / "eblus_needle_guidance_cropped.png",
+    ]
+    task_names = [
+        "Peg Transfer",
+        "Circle Cutting",
+        "Ligating Loop",
+        "Extracorporeal Knot Tying",
+        "Intracorporeal Knot Tying",
+        "Needle Guidance",
     ]
     if not all(path.exists() for path in task_paths):
         return
-    fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.25))
-    for ax, path, panel in zip(axes.flat, task_paths, "abcdef"):
+    fig, axes = plt.subplots(2, 3, figsize=(7.2, 3.2))
+    for ax, path, panel, task_name in zip(
+        axes.flat,
+        task_paths,
+        "abcdef",
+        task_names,
+    ):
         show_center_crop(ax, path)
-        image_panel_label(ax, panel, y=-0.07)
-    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.07, wspace=0.03, hspace=0.18)
+        image_panel_label(ax, panel, y=-0.07, title=task_name)
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.08, wspace=0.03, hspace=0.14)
     save_fig(fig, "fig0_training_systems")
 
 
@@ -3035,12 +3193,18 @@ def plot_collection_setups() -> None:
         FIG / "source" / "collection_setups" / "setup_urology_2024.jpeg",
         FIG / "source" / "collection_setups" / "setup_urology_2025.jpeg",
     ]
+    cohort_names = ["Paediatric", "Urology 1", "Urology 2", "Urology 2025"]
     if not all(path.exists() for path in setup_paths):
         return
     fig, axes = plt.subplots(2, 2, figsize=(7.2, 4.45))
-    for ax, path, panel in zip(axes.flat, setup_paths, "abcd"):
+    for ax, path, panel, cohort_name in zip(
+        axes.flat,
+        setup_paths,
+        "abcd",
+        cohort_names,
+    ):
         show_center_crop(ax, path)
-        image_panel_label(ax, panel, y=-0.06)
+        image_panel_label(ax, panel, y=-0.06, title=cohort_name)
     fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.07, wspace=0.025, hspace=0.15)
     save_fig(fig, "fig0_collection_setups")
 
@@ -3059,57 +3223,92 @@ def plot_peg_transfer_cycle_frames() -> None:
     if not all(path.exists() for _, path in stage_paths):
         return
 
-    fig, axes = plt.subplots(2, 3, figsize=(7.4, 4.2))
+    fig, axes = plt.subplots(2, 3, figsize=(7.4, 3.25))
     for ax, (stage, path), panel in zip(axes.flat, stage_paths, "abcdef"):
         show_center_crop(ax, path)
-        ax.text(
-            0.5,
-            -0.065,
-            f"({panel}) {stage}",
-            transform=ax.transAxes,
-            ha="center",
-            va="top",
-            fontsize=8,
-            fontweight="bold",
-            clip_on=False,
-        )
+        image_panel_label(ax, panel, y=-0.065, title=stage)
     fig.subplots_adjust(
         left=0.01,
         right=0.99,
         top=0.99,
-        bottom=0.07,
+        bottom=0.08,
         wspace=0.025,
-        hspace=0.19,
+        hspace=0.14,
     )
     save_fig(fig, "fig0_peg_transfer_cycle_frames")
 
 
-def plot_feature_effects(stats_df: pd.DataFrame) -> None:
+def plot_feature_effects(
+    stats_df: pd.DataFrame,
+    duration_adjusted: pd.DataFrame,
+) -> None:
     d = stats_df.dropna(subset=["cliffs_delta_novice_expert"]).copy()
     d = d[d["n_nonmissing"] >= 20]
-    orientation = []
+    delta_orientation = []
+    correlation_orientation = []
     for feature in d["feature"]:
         arrow, _ = FEATURE_DIRECTIONS.get(feature, ("$\\uparrow$", ""))
-        orientation.append(-1 if "\\uparrow" in arrow else 1)
-    d["_orientation"] = orientation
-    d["oriented_delta"] = d["cliffs_delta_novice_expert"] * d["_orientation"]
+        higher_is_favourable = "\\uparrow" in arrow
+        delta_orientation.append(-1 if higher_is_favourable else 1)
+        correlation_orientation.append(1 if higher_is_favourable else -1)
+    d["_delta_orientation"] = delta_orientation
+    d["_correlation_orientation"] = correlation_orientation
+    d["oriented_delta"] = (
+        d["cliffs_delta_novice_expert"] * d["_delta_orientation"]
+    )
     d["oriented_ci_low"] = np.where(
-        d["_orientation"] > 0,
+        d["_delta_orientation"] > 0,
         d["delta_ci_low"],
         -d["delta_ci_high"],
     )
     d["oriented_ci_high"] = np.where(
-        d["_orientation"] > 0,
+        d["_delta_orientation"] > 0,
         d["delta_ci_high"],
         -d["delta_ci_low"],
     )
-    d = d.loc[d["oriented_delta"].abs().sort_values(ascending=False).index].head(18)
+    d["oriented_rho"] = (
+        d["spearman_rho_procedures"] * d["_correlation_orientation"]
+    )
+    d["oriented_rho_low"] = np.where(
+        d["_correlation_orientation"] > 0,
+        d["spearman_ci_low"],
+        -d["spearman_ci_high"],
+    )
+    d["oriented_rho_high"] = np.where(
+        d["_correlation_orientation"] > 0,
+        d["spearman_ci_high"],
+        -d["spearman_ci_low"],
+    )
+    d["_priority"] = np.maximum(d["oriented_delta"].abs(), d["oriented_rho"].abs())
+    d = d.nlargest(18, "_priority")
     d = d.sort_values("oriented_delta")
+    d = d.merge(
+        duration_adjusted[
+            [
+                "feature",
+                "adjusted_procedure_beta",
+                "ci_low",
+                "ci_high",
+                "permutation_q",
+            ]
+        ],
+        on="feature",
+        how="left",
+        validate="one_to_one",
+    )
     y = np.arange(len(d))
-    fig, ax = plt.subplots(figsize=(7.2, max(5.2, 0.22 * len(d))))
-    ax.axvline(0, color="#444444", lw=0.8)
-    colors = ["#0072B2" if q < 0.05 else "#8A8A8A" for q in d["kruskal_q"]]
-    ax.errorbar(
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(8.9, max(5.6, 0.25 * len(d))),
+        sharey=True,
+        gridspec_kw={"wspace": 0.10},
+    )
+    for ax in axes:
+        ax.axvline(0, color="#444444", lw=0.8)
+
+    group_colors = ["#0072B2" if q < 0.05 else "#8A8A8A" for q in d["kruskal_q"]]
+    axes[0].errorbar(
         d["oriented_delta"],
         y,
         xerr=[
@@ -3121,29 +3320,396 @@ def plot_feature_effects(stats_df: pd.DataFrame) -> None:
         elinewidth=0.9,
         capsize=2,
     )
-    ax.scatter(d["oriented_delta"], y, s=24, c=colors, zorder=3)
-    ax.set_yticks(y, d["label"])
-    ax.set_xlabel("Oriented Cliff's delta for expert versus novice")
-    ax.text(
+    axes[0].scatter(d["oriented_delta"], y, s=24, c=group_colors, zorder=3)
+    axes[0].set_yticks(y, d["label"])
+    axes[0].set_xlabel("Cliff's delta: expert versus novice")
+    axes[0].set_xlim(-0.75, 0.75)
+    axes[0].text(
         0.01,
         1.01,
         "Novice-favouring",
-        transform=ax.transAxes,
+        transform=axes[0].transAxes,
         ha="left",
         va="bottom",
         fontsize=7,
     )
-    ax.text(
+    axes[0].text(
         0.99,
         1.01,
         "Expert-favouring",
-        transform=ax.transAxes,
+        transform=axes[0].transAxes,
         ha="right",
         va="bottom",
         fontsize=7,
     )
+    panel_label(axes[0], "a")
+
+    procedure_colors = [
+        "#0072B2" if q < 0.05 else "#8A8A8A" for q in d["spearman_q"]
+    ]
+    axes[1].errorbar(
+        d["oriented_rho"],
+        y,
+        xerr=[
+            d["oriented_rho"] - d["oriented_rho_low"],
+            d["oriented_rho_high"] - d["oriented_rho"],
+        ],
+        fmt="none",
+        ecolor="#666666",
+        elinewidth=0.9,
+        capsize=2,
+    )
+    axes[1].scatter(d["oriented_rho"], y, s=24, c=procedure_colors, zorder=3)
+    axes[1].set_xlabel("Spearman correlation with procedure volume")
+    axes[1].set_xlim(-0.75, 0.75)
+    axes[1].tick_params(axis="y", labelleft=False)
+    axes[1].text(
+        0.01,
+        1.01,
+        "Opposite direction",
+        transform=axes[1].transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=7,
+    )
+    axes[1].text(
+        0.99,
+        1.01,
+        "Expected direction",
+        transform=axes[1].transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=7,
+    )
+    panel_label(axes[1], "b")
+
+    adjusted_colors = [
+        "#0072B2" if q < 0.05 else "#8A8A8A"
+        for q in d["permutation_q"].fillna(1.0)
+    ]
+    axes[2].errorbar(
+        d["adjusted_procedure_beta"],
+        y,
+        xerr=[
+            d["adjusted_procedure_beta"] - d["ci_low"],
+            d["ci_high"] - d["adjusted_procedure_beta"],
+        ],
+        fmt="none",
+        ecolor="#666666",
+        elinewidth=0.9,
+        capsize=2,
+    )
+    axes[2].scatter(
+        d["adjusted_procedure_beta"], y, s=24, c=adjusted_colors, zorder=3
+    )
+    axes[2].set_xlabel("Procedure coefficient after\naccounting for duration")
+    axes[2].set_xlim(-0.55, 0.55)
+    axes[2].tick_params(axis="y", labelleft=False)
+    axes[2].text(
+        0.01,
+        1.01,
+        "Opposite direction",
+        transform=axes[2].transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=7,
+    )
+    axes[2].text(
+        0.99,
+        1.01,
+        "Expected direction",
+        transform=axes[2].transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=7,
+    )
+    duration_positions = np.flatnonzero(d["feature"].eq("total_time").to_numpy())
+    if len(duration_positions):
+        axes[2].text(
+            0.50,
+            duration_positions[0],
+            "Adjustment variable",
+            ha="right",
+            va="center",
+            fontsize=6.5,
+            color="#666666",
+            fontstyle="italic",
+        )
+    panel_label(axes[2], "c")
     fig.tight_layout()
     save_fig(fig, "fig2_feature_effects")
+
+
+def consistent_experience_patterns(
+    df: pd.DataFrame,
+    stats_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Identify measurements with ordered medians and corrected evidence.
+
+    The novice, intermediate, and expert medians must follow the prespecified
+    direction in every cohort. The association with continuous procedure
+    volume must also survive the 29-feature false discovery rate correction.
+    """
+    identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
+    primary = df.loc[identifier_counts.eq(1)].copy()
+    stats_lookup = stats_df.set_index("feature")
+    retained: list[dict[str, object]] = []
+    median_rows: list[dict[str, object]] = []
+
+    for feature, (arrow, interpretation) in FEATURE_DIRECTIONS.items():
+        if feature not in primary.columns or feature not in stats_lookup.index:
+            continue
+        feature_stats = stats_lookup.loc[feature]
+        if (
+            not np.isfinite(feature_stats["spearman_q"])
+            or feature_stats["spearman_q"] >= 0.05
+        ):
+            continue
+
+        favourable_sign = 1.0 if "\\uparrow" in arrow else -1.0
+        cohort_changes = []
+        cohort_medians: dict[str, dict[str, float]] = {}
+        ordered_in_every_cohort = True
+        for dataset in DATASET_ORDER:
+            cohort = primary.loc[primary["dataset"].eq(dataset)]
+            medians = {
+                skill: float(
+                    pd.to_numeric(
+                        cohort.loc[cohort["skill_category"].eq(skill), feature],
+                        errors="coerce",
+                    ).median()
+                )
+                for skill in SKILL_ORDER
+            }
+            oriented = [favourable_sign * medians[skill] for skill in SKILL_ORDER]
+            if not all(np.isfinite(oriented)) or not (
+                oriented[0] <= oriented[1] <= oriented[2]
+            ):
+                ordered_in_every_cohort = False
+                break
+            cohort_medians[dataset] = medians
+            novice = medians["novice"]
+            expert = medians["expert"]
+            if novice != 0:
+                cohort_changes.append(
+                    float(100.0 * favourable_sign * (expert - novice) / abs(novice))
+                )
+
+        if not ordered_in_every_cohort:
+            continue
+
+        rho = favourable_sign * float(feature_stats["spearman_rho_procedures"])
+        if favourable_sign > 0:
+            rho_low = float(feature_stats["spearman_ci_low"])
+            rho_high = float(feature_stats["spearman_ci_high"])
+        else:
+            rho_low = -float(feature_stats["spearman_ci_high"])
+            rho_high = -float(feature_stats["spearman_ci_low"])
+
+        retained.append(
+            {
+                "feature": feature,
+                "label": FEATURES[feature],
+                "direction": arrow,
+                "interpretation": interpretation,
+                "minimum_favourable_median_change_pct": float(min(cohort_changes)),
+                "maximum_favourable_median_change_pct": float(max(cohort_changes)),
+                "oriented_meta_rho": rho,
+                "oriented_meta_ci_low": rho_low,
+                "oriented_meta_ci_high": rho_high,
+                "spearman_q": float(feature_stats["spearman_q"]),
+            }
+        )
+        for dataset, medians in cohort_medians.items():
+            for skill in SKILL_ORDER:
+                median_rows.append(
+                    {
+                        "feature": feature,
+                        "label": FEATURES[feature],
+                        "dataset": dataset,
+                        "cohort": dataset_label(dataset),
+                        "procedure_group": skill,
+                        "median": medians[skill],
+                    }
+                )
+
+    display_order = [
+        "total_time",
+        "tool1_normalized_jerk",
+        "tool2_normalized_jerk",
+        "tool2_num_speed_peaks",
+    ]
+    summary = pd.DataFrame(retained)
+    summary["_display_order"] = pd.Categorical(
+        summary["feature"], categories=display_order, ordered=True
+    )
+    summary = (
+        summary.sort_values(["_display_order", "feature"])
+        .drop(columns="_display_order")
+        .reset_index(drop=True)
+    )
+    summary.to_csv(OUT / "consistent_experience_patterns.csv", index=False)
+    pd.DataFrame(median_rows).to_csv(
+        OUT / "consistent_experience_pattern_medians.csv", index=False
+    )
+
+    table_rows = []
+    table_labels = {
+        "total_time": "Analysed duration",
+        "tool1_normalized_jerk": "Left tool normalised jerk",
+        "tool2_normalized_jerk": "Right tool normalised jerk",
+        "tool2_num_speed_peaks": "Right tool stop-start peaks",
+    }
+    table_interpretations = {
+        "total_time": "shorter task time",
+        "tool1_normalized_jerk": "smoother left tool motion",
+        "tool2_normalized_jerk": "smoother right tool motion",
+        "tool2_num_speed_peaks": "fewer right tool stop-start movements",
+    }
+    for _, row in summary.iterrows():
+        change = (
+            f"{row['minimum_favourable_median_change_pct']:.0f}--"
+            f"{row['maximum_favourable_median_change_pct']:.0f}\\%"
+        )
+        table_rows.append(
+            f"{table_labels.get(row['feature'], row['label'])} {row['direction']} & "
+            f"{table_interpretations.get(row['feature'], row['interpretation'])} & "
+            f"{change} & {row['oriented_meta_rho']:.2f} "
+            f"[{row['oriented_meta_ci_low']:.2f}--{row['oriented_meta_ci_high']:.2f}] & "
+            f"{row['spearman_q']:.3f} \\\\"
+        )
+    (TAB / "consistent_experience_patterns.tex").write_text(
+        "\n".join(
+            [
+                "\\begin{tabular}{L{3.1cm}L{4.1cm}rrr}",
+                "\\toprule",
+                "Measurement & Clinical interpretation & N to E median change & "
+                "Experience-aligned $\\rho$ [95\\% CI] & FDR $q$ \\\\ ",
+                "\\midrule",
+                *table_rows,
+                "\\bottomrule",
+                "\\end{tabular}",
+            ]
+        )
+    )
+    return summary
+
+
+def plot_consistent_experience_patterns(
+    df: pd.DataFrame,
+    patterns: pd.DataFrame,
+) -> None:
+    """Show all recordings for the convergent ordered measurements."""
+    if patterns.empty:
+        return
+    identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
+    primary = df.loc[identifier_counts.eq(1)].copy()
+    features = patterns["feature"].tolist()
+    display_labels = {
+        "total_time": "Task duration",
+        "tool1_normalized_jerk": "Left tool smoothness",
+        "tool2_normalized_jerk": "Right tool smoothness",
+        "tool2_num_speed_peaks": "Right tool movement continuity",
+    }
+
+    scores = []
+    for dataset in DATASET_ORDER:
+        cohort = primary.loc[primary["dataset"].eq(dataset)].copy()
+        for feature in features:
+            arrow, _ = FEATURE_DIRECTIONS[feature]
+            favourable_sign = 1.0 if "\\uparrow" in arrow else -1.0
+            values = favourable_sign * pd.to_numeric(cohort[feature], errors="coerce")
+            valid = values.notna()
+            relative = pd.Series(np.nan, index=cohort.index, dtype=float)
+            relative.loc[valid] = 1.0 + 4.0 * values.loc[valid].rank(
+                method="average", pct=True
+            )
+            block = cohort.loc[
+                valid, ["dataset", "skill_category", "trial_key"]
+            ].copy()
+            block["feature"] = feature
+            block["relative_score"] = relative.loc[valid]
+            scores.append(block)
+    score_df = pd.concat(scores, ignore_index=True)
+
+    fig, axes = plt.subplots(
+        len(features),
+        len(DATASET_ORDER),
+        figsize=(9.2, 8.2),
+        sharey=True,
+    )
+    rng = np.random.default_rng(20260817)
+    for row, feature in enumerate(features):
+        for col, dataset in enumerate(DATASET_ORDER):
+            ax = axes[row, col]
+            cohort = score_df[
+                score_df["dataset"].eq(dataset) & score_df["feature"].eq(feature)
+            ]
+            groups = [
+                cohort.loc[
+                    cohort["skill_category"].eq(skill), "relative_score"
+                ].dropna()
+                for skill in SKILL_ORDER
+            ]
+            bp = ax.boxplot(
+                groups,
+                patch_artist=True,
+                tick_labels=["N", "I", "E"],
+                showfliers=False,
+                widths=0.58,
+                medianprops={"color": "#222222", "linewidth": 1.1},
+            )
+            for patch, skill in zip(bp["boxes"], SKILL_ORDER):
+                patch.set_facecolor(SKILL_COLORS[skill])
+                patch.set_alpha(0.72)
+            for position, values in enumerate(groups, start=1):
+                if values.empty:
+                    continue
+                jitter = rng.uniform(-0.09, 0.09, size=len(values))
+                ax.scatter(
+                    np.full(len(values), position) + jitter,
+                    values,
+                    s=8,
+                    color="#222222",
+                    alpha=0.38,
+                    linewidths=0,
+                    zorder=3,
+                )
+            ax.set_ylim(0.85, 5.25)
+            ax.set_yticks([1, 2, 3, 4, 5])
+            ax.grid(axis="y", color="#E2E2E2", linewidth=0.5)
+            if row == 0:
+                ax.set_title(dataset_label(dataset), fontsize=8.5)
+            if col == 0:
+                ax.set_ylabel(
+                    f"{display_labels.get(feature, FEATURES[feature])}\nrelative score (1--5)"
+                )
+            if row < len(features) - 1:
+                ax.set_xticklabels([])
+            else:
+                ax.set_xlabel("Procedure-count group")
+            panel_label(ax, chr(ord("a") + row * len(DATASET_ORDER) + col))
+
+    handles = [
+        Patch(facecolor=SKILL_COLORS[skill], alpha=0.72, label=nice(skill))
+        for skill in SKILL_ORDER
+    ]
+    fig.legend(
+        handles=handles,
+        frameon=False,
+        ncol=3,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.012),
+    )
+    fig.subplots_adjust(
+        left=0.16,
+        right=0.99,
+        top=0.95,
+        bottom=0.11,
+        hspace=0.22,
+        wspace=0.16,
+    )
+    save_fig(fig, "fig3_consistent_experience_patterns")
 
 
 def plot_phase_timing(cycles: pd.DataFrame, trials: pd.DataFrame) -> None:
@@ -3284,7 +3850,7 @@ def plot_osats_proxy(proxy: pd.DataFrame, clusters: pd.DataFrame, cluster_summar
             ax.set_xticklabels([display_labels[c] for c in domain_cols], rotation=24, ha="right")
         else:
             ax.set_xticklabels([])
-        ax.set_ylabel("Measured\nband")
+        ax.set_ylabel("Motion-score\nband")
         for r in range(summary.shape[0]):
             for c in range(summary.shape[1]):
                 value = summary.iloc[r, c]
@@ -3511,32 +4077,454 @@ def plot_motion_domains(df: pd.DataFrame) -> None:
         save_fig(fig, f"fig7_motion_component_domains_{dataset_slug(ds)}")
 
 
-def plot_jaw_and_rotation(df: pd.DataFrame) -> None:
-    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.9))
-    jaw_df = df[df["dataset"].isin(["7DOF2024", "BAPES2024"])].copy()
-    panels = [
-        ("Jaw signal range", "tool1_jaw_angle_range", "tool2_jaw_angle_range", "Voltage range"),
-        ("Detected aperture cycles", "tool1_jaw_open_close_count", "tool2_jaw_open_close_count", "Cycles"),
-        ("Angular velocity variability", "tool1_angular_velocity_cv", "tool2_angular_velocity_cv", "CV"),
-    ]
-    for ax, (title, c1, c2, ylabel), label in zip(axes, panels, ["a", "b", "c"]):
-        source = jaw_df if "jaw" in c1 else df
-        order = ["BAPES2024", "7DOF2024"] if "jaw" in c1 else DATASET_ORDER
-        source = source.copy()
-        source["metric"] = source[[c1, c2]].mean(axis=1, skipna=True)
-        for i, ds in enumerate(order):
-            g = source[source["dataset"] == ds]["metric"].dropna()
-            if len(g) == 0:
+JAW_FEATURE_LABELS = {
+    "relative_voltage_excursion": "Relative voltage excursion",
+    "mean_aperture_change_rate": "Mean aperture change rate",
+    "p95_aperture_change_rate": "95th-percentile aperture change rate",
+    "aperture_cycles_per_movement": "Aperture cycles per movement episode",
+    "aperture_cycles_per_second": "Aperture cycles per second",
+    "bilateral_cycle_balance": "Bilateral cycle balance",
+    "bilateral_aperture_rate_correlation": "Left-right aperture-rate correlation",
+}
+
+
+def _jaw_label_path_index() -> dict[tuple[str, int], list[Path]]:
+    """Index raw angle files by cohort and organiser trial number."""
+    index: dict[tuple[str, int], list[Path]] = {}
+    for dataset in ["BAPES2024", "7DOF2024"]:
+        for path in (AI_ELT / dataset).glob("**/label.json"):
+            match = re.search(r"Trial\s*(\d+)", path.parent.name, re.IGNORECASE)
+            if match:
+                index.setdefault((dataset, int(match.group(1))), []).append(path)
+    return index
+
+
+def _load_jaw_angles(path: Path) -> pd.DataFrame:
+    """Load raw handle voltage while tolerating legacy trailing commas."""
+    repaired = re.sub(r",\s*([}\]])", r"\1", path.read_text(errors="replace"))
+    annotations = json.loads(repaired)["annotations"]
+    return pd.DataFrame(
+        {
+            "frame_idx": [item["Frame"] for item in annotations],
+            "left_voltage": [item["Tool 1"].get("Angle", np.nan) for item in annotations],
+            "right_voltage": [item["Tool 2"].get("Angle", np.nan) for item in annotations],
+        }
+    )
+
+
+def _relative_aperture_features(
+    values: Iterable[float],
+    fps: int,
+    window_frames: int,
+) -> dict[str, object]:
+    """Convert one voltage trace into robust relative-aperture measurements."""
+    voltage = pd.Series(values, dtype=float).interpolate(limit_direction="both").to_numpy()
+    if len(voltage) < 5 or not np.isfinite(voltage).any():
+        return {
+            "relative": np.full(len(voltage), np.nan),
+            "change_rate": np.full(len(voltage), np.nan),
+            "voltage_excursion": np.nan,
+            "mean_change_rate": np.nan,
+            "p95_change_rate": np.nan,
+            "aperture_cycles": np.nan,
+        }
+    window = min(window_frames, len(voltage) if len(voltage) % 2 else len(voltage) - 1)
+    smoothed = (
+        savgol_filter(voltage, window, 3, mode="interp")
+        if window >= 5
+        else voltage
+    )
+    low, high = np.nanpercentile(smoothed, [10, 90])
+    excursion = float(high - low)
+    if not np.isfinite(excursion) or excursion <= 1e-12:
+        relative = np.full(len(smoothed), np.nan)
+    else:
+        relative = np.clip((smoothed - low) / excursion, 0.0, 1.0)
+    change_rate = np.abs(np.gradient(relative)) * fps
+
+    derivative = np.diff(relative)
+    sign_change = np.diff(np.sign(derivative))
+    peaks = np.where(sign_change == -2)[0]
+    valleys = np.where(sign_change == 2)[0]
+    extrema = sorted(
+        [(int(index), "peak") for index in peaks]
+        + [(int(index), "valley") for index in valleys]
+    )
+    aperture_cycles = 0
+    last_valley: float | None = None
+    for index, kind in extrema:
+        if kind == "valley":
+            last_valley = float(relative[index])
+        elif last_valley is not None and relative[index] - last_valley > 0.10:
+            aperture_cycles += 1
+            last_valley = None
+    return {
+        "relative": relative,
+        "change_rate": change_rate,
+        "voltage_excursion": excursion,
+        "mean_change_rate": float(np.nanmean(change_rate)),
+        "p95_change_rate": float(np.nanpercentile(change_rate, 95)),
+        "aperture_cycles": float(aperture_cycles),
+    }
+
+
+def _jaw_fixed_effect_associations(metrics: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    for feature, label in JAW_FEATURE_LABELS.items():
+        fisher_values = []
+        weights = []
+        cohort_estimates: dict[str, float] = {}
+        cohort_ns: dict[str, int] = {}
+        for dataset in ["BAPES2024", "7DOF2024"]:
+            cohort = metrics.loc[
+                metrics["dataset"].eq(dataset),
+                ["total_procedures", feature],
+            ].dropna()
+            cohort_ns[dataset] = int(len(cohort))
+            if len(cohort) < 4 or cohort[feature].nunique() < 2:
+                cohort_estimates[dataset] = np.nan
                 continue
-            x = np.full(len(g), i) + np.linspace(-0.12, 0.12, len(g))
-            ax.scatter(x, g, s=15, alpha=0.75, color=DATASET_COLORS[ds])
-            lo, hi = bootstrap_ci(g)
-            ax.errorbar(i, g.mean(), yerr=[[g.mean() - lo], [hi - g.mean()]], color="#333333", capsize=3, fmt="o", ms=3)
-        ax.set_xticks(range(len(order)), [dataset_label(ds) for ds in order], rotation=25, ha="right")
-        ax.set_ylabel(ylabel)
-        ax.set_title(title, fontsize=8)
+            rho = float(
+                stats.spearmanr(cohort["total_procedures"], cohort[feature]).statistic
+            )
+            cohort_estimates[dataset] = rho
+            fisher_values.append(np.arctanh(np.clip(rho, -0.999999, 0.999999)))
+            weights.append(max(len(cohort) - 3, 1))
+        if fisher_values:
+            z_value = float(np.average(fisher_values, weights=weights))
+            standard_error = float(1.0 / np.sqrt(np.sum(weights)))
+            combined_rho = float(np.tanh(z_value))
+            ci_low, ci_high = np.tanh(
+                [z_value - 1.96 * standard_error, z_value + 1.96 * standard_error]
+            )
+            p_value = float(2 * stats.norm.sf(abs(z_value / standard_error)))
+        else:
+            combined_rho = ci_low = ci_high = p_value = np.nan
+        rows.append(
+            {
+                "feature": feature,
+                "label": label,
+                "n": int(metrics[feature].notna().sum()),
+                "paediatric_n": cohort_ns.get("BAPES2024", 0),
+                "paediatric_rho": cohort_estimates.get("BAPES2024", np.nan),
+                "urology2_n": cohort_ns.get("7DOF2024", 0),
+                "urology2_rho": cohort_estimates.get("7DOF2024", np.nan),
+                "combined_rho": combined_rho,
+                "ci_low": float(ci_low),
+                "ci_high": float(ci_high),
+                "p": p_value,
+            }
+        )
+    out = pd.DataFrame(rows)
+    out["q"] = benjamini_hochberg(out["p"])
+    return out
+
+
+def jaw_voltage_analysis(
+    df: pd.DataFrame,
+    phase_frames: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Analyse relative jaw activity in the two cohorts with handle sensors."""
+    identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
+    primary = df.loc[
+        identifier_counts.eq(1) & df["dataset"].isin(["BAPES2024", "7DOF2024"])
+    ].copy()
+    path_index = _jaw_label_path_index()
+    metrics_by_window: dict[int, list[dict[str, object]]] = {5: [], 7: [], 11: []}
+    raw_by_trial: dict[str, pd.DataFrame] = {}
+
+    for row in primary.itertuples(index=False):
+        paths = path_index.get((str(row.dataset), int(row.trial_number)), [])
+        if len(paths) != 1:
+            raise FileNotFoundError(
+                f"Expected one jaw label file for {row.dataset} trial {row.trial_number}; "
+                f"found {len(paths)}"
+            )
+        raw = _load_jaw_angles(paths[0])
+        raw = raw.loc[
+            raw["frame_idx"].between(int(row.trim_start_frame), int(row.trim_end_frame))
+        ].copy()
+        raw_by_trial[str(row.trial_key)] = raw
+        for window_frames in metrics_by_window:
+            left = _relative_aperture_features(
+                raw["left_voltage"], int(row.fps), window_frames
+            )
+            right = _relative_aperture_features(
+                raw["right_voltage"], int(row.fps), window_frames
+            )
+            left_cycles = float(left["aperture_cycles"])
+            right_cycles = float(right["aperture_cycles"])
+            maximum_cycles = max(left_cycles, right_cycles)
+            metrics_by_window[window_frames].append(
+                {
+                    "trial_key": row.trial_key,
+                    "dataset": row.dataset,
+                    "trial_name": row.trial_name,
+                    "trial_number": int(row.trial_number),
+                    "skill_category": row.skill_category,
+                    "total_procedures": float(row.total_procedures),
+                    "relative_voltage_excursion": float(
+                        np.mean([left["voltage_excursion"], right["voltage_excursion"]])
+                    ),
+                    "mean_aperture_change_rate": float(
+                        np.mean([left["mean_change_rate"], right["mean_change_rate"]])
+                    ),
+                    "p95_aperture_change_rate": float(
+                        np.mean([left["p95_change_rate"], right["p95_change_rate"]])
+                    ),
+                    "aperture_cycles_per_movement": float(
+                        np.mean(
+                            [
+                                left_cycles / row.tool1_num_movements,
+                                right_cycles / row.tool2_num_movements,
+                            ]
+                        )
+                    ),
+                    "aperture_cycles_per_second": float(
+                        np.mean([left_cycles, right_cycles]) / row.total_time
+                    ),
+                    "bilateral_cycle_balance": (
+                        float(min(left_cycles, right_cycles) / maximum_cycles)
+                        if maximum_cycles > 0
+                        else np.nan
+                    ),
+                    "bilateral_aperture_rate_correlation": _safe_corr(
+                        np.asarray(left["change_rate"], dtype=float),
+                        np.asarray(right["change_rate"], dtype=float),
+                    ),
+                }
+            )
+
+    primary_metrics = pd.DataFrame(metrics_by_window[5])
+    primary_associations = _jaw_fixed_effect_associations(primary_metrics)
+    primary_metrics.to_csv(OUT / "jaw_voltage_trial_metrics.csv", index=False)
+    primary_associations.to_csv(OUT / "jaw_voltage_statistics.csv", index=False)
+
+    sensitivity_rows = []
+    for window_frames, rows in metrics_by_window.items():
+        estimates = _jaw_fixed_effect_associations(pd.DataFrame(rows))
+        estimates.insert(0, "window_frames", window_frames)
+        estimates.insert(1, "window_seconds", window_frames / 13.0)
+        sensitivity_rows.append(estimates)
+    sensitivity = pd.concat(sensitivity_rows, ignore_index=True)
+    sensitivity.to_csv(OUT / "jaw_smoothing_sensitivity.csv", index=False)
+
+    table_lines = [
+        r"\begin{tabular}{lrrrrr}",
+        r"\toprule",
+        r"Measurement & Paediatric $\rho$ & Urology 2 $\rho$ & Combined $\rho$ [95\% CI] & $p$ & $q$ \\",
+        r"\midrule",
+    ]
+    for row in primary_associations.itertuples(index=False):
+        table_lines.append(
+            f"{row.label} & {row.paediatric_rho:+.2f} & {row.urology2_rho:+.2f} & "
+            f"{row.combined_rho:+.2f} [{row.ci_low:+.2f}, {row.ci_high:+.2f}] & "
+            f"{row.p:.3f} & {row.q:.3f} \\\\"
+        )
+    table_lines.extend([r"\bottomrule", r"\end{tabular}"])
+    (TAB / "jaw_voltage_statistics.tex").write_text("\n".join(table_lines))
+
+    sensitivity_lines = [
+        r"\begin{tabular}{lrrr}",
+        r"\toprule",
+        r"Measurement & 5 frames, 0.38 s & 7 frames, 0.54 s & 11 frames, 0.85 s \\",
+        r"\midrule",
+    ]
+    for feature, label in JAW_FEATURE_LABELS.items():
+        cells = []
+        for window_frames in [5, 7, 11]:
+            row = sensitivity.loc[
+                sensitivity["window_frames"].eq(window_frames)
+                & sensitivity["feature"].eq(feature)
+            ].iloc[0]
+            cells.append(f"{row['combined_rho']:+.2f} ({row['q']:.3f})")
+        sensitivity_lines.append(f"{label} & " + " & ".join(cells) + r" \\")
+    sensitivity_lines.extend([r"\bottomrule", r"\end{tabular}"])
+    (TAB / "jaw_smoothing_sensitivity.tex").write_text(
+        "\n".join(sensitivity_lines)
+    )
+
+    phase_rows = []
+    primary_keys = set(primary_metrics["trial_key"])
+    for trial_key_value, group in phase_frames.loc[
+        phase_frames["trial_key"].isin(primary_keys)
+    ].groupby("trial_key", sort=False):
+        trial = primary.loc[primary["trial_key"].eq(trial_key_value)].iloc[0]
+        raw = raw_by_trial[str(trial_key_value)]
+        merged = group[["frame_idx", "coarse_derived", "cycle_index"]].merge(
+            raw,
+            on="frame_idx",
+            how="left",
+        ).sort_values("frame_idx")
+        left = _relative_aperture_features(merged["left_voltage"], int(trial["fps"]), 5)
+        right = _relative_aperture_features(merged["right_voltage"], int(trial["fps"]), 5)
+        merged["left_relative_aperture"] = left["relative"]
+        merged["right_relative_aperture"] = right["relative"]
+        merged["bilateral_change_rate"] = np.nanmean(
+            np.column_stack([left["change_rate"], right["change_rate"]]),
+            axis=1,
+        )
+        record: dict[str, object] = {
+            "trial_key": trial_key_value,
+            "dataset": trial["dataset"],
+        }
+        for phase in ["reach", "grasp", "transfer", "place"]:
+            values = merged.loc[
+                merged["coarse_derived"].eq(phase), "bilateral_change_rate"
+            ]
+            record[f"{phase}_change_rate"] = float(values.mean())
+        phase_rows.append(record)
+
+    phase_metrics = pd.DataFrame(phase_rows)
+    phase_metrics.to_csv(OUT / "jaw_phase_trial_metrics.csv", index=False)
+    comparisons = []
+    phase_columns = [f"{phase}_change_rate" for phase in ["reach", "grasp", "transfer", "place"]]
+    complete = phase_metrics[phase_columns].dropna()
+    if len(complete):
+        statistic, p_value = stats.friedmanchisquare(
+            *[complete[column] for column in phase_columns]
+        )
+        comparisons.append(
+            {
+                "comparison": "Overall phase comparison",
+                "n": len(complete),
+                "statistic": statistic,
+                "p": p_value,
+            }
+        )
+    planned = [
+        ("Grasp versus reach", "grasp_change_rate", "reach_change_rate"),
+        ("Grasp versus transfer", "grasp_change_rate", "transfer_change_rate"),
+        ("Transfer versus place", "transfer_change_rate", "place_change_rate"),
+    ]
+    planned_rows = []
+    for label, first, second in planned:
+        paired = phase_metrics[[first, second]].dropna()
+        statistic, p_value = stats.wilcoxon(paired[first], paired[second])
+        planned_rows.append(
+            {
+                "comparison": label,
+                "n": len(paired),
+                "statistic": statistic,
+                "p": p_value,
+                "first_median": float(paired[first].median()),
+                "second_median": float(paired[second].median()),
+            }
+        )
+    planned_frame = pd.DataFrame(planned_rows)
+    planned_frame["q"] = benjamini_hochberg(planned_frame["p"])
+    comparisons.extend(planned_frame.to_dict(orient="records"))
+    pd.DataFrame(comparisons).to_csv(OUT / "jaw_phase_comparisons.csv", index=False)
+
+    trace = pd.DataFrame()
+    preferred = phase_frames.loc[
+        phase_frames["dataset"].eq("BAPES2024")
+        & phase_frames["trial_short"].eq("MIS Course/Trial1")
+        & phase_frames["cycle_index"].eq(3)
+    ]
+    if not preferred.empty:
+        key = str(preferred["trial_key"].iloc[0])
+        trial = primary.loc[primary["trial_key"].eq(key)].iloc[0]
+        trace = preferred[["frame_idx", "coarse_derived"]].merge(
+            raw_by_trial[key], on="frame_idx", how="left"
+        ).sort_values("frame_idx")
+        left = _relative_aperture_features(trace["left_voltage"], int(trial["fps"]), 5)
+        right = _relative_aperture_features(trace["right_voltage"], int(trial["fps"]), 5)
+        trace["time_s"] = np.arange(len(trace), dtype=float) / int(trial["fps"])
+        trace["left_relative_aperture"] = left["relative"]
+        trace["right_relative_aperture"] = right["relative"]
+    return primary_metrics, primary_associations, phase_metrics, trace
+
+
+def plot_jaw_and_rotation(
+    metrics: pd.DataFrame,
+    associations: pd.DataFrame,
+    phase_metrics: pd.DataFrame,
+    trace: pd.DataFrame,
+) -> None:
+    fig = plt.figure(figsize=(7.4, 7.8))
+    grid = fig.add_gridspec(3, 2, height_ratios=[1.0, 1.45, 1.25], hspace=0.55, wspace=0.30)
+    trace_ax = fig.add_subplot(grid[0, :])
+    forest_ax = fig.add_subplot(grid[1, :])
+    phase_axes = [fig.add_subplot(grid[2, 0]), fig.add_subplot(grid[2, 1])]
+
+    if not trace.empty:
+        for phase, group in trace.groupby(
+            trace["coarse_derived"].ne(trace["coarse_derived"].shift()).cumsum(),
+            sort=False,
+        ):
+            phase_name = str(group["coarse_derived"].iloc[0])
+            trace_ax.axvspan(
+                group["time_s"].iloc[0],
+                group["time_s"].iloc[-1],
+                color=PHASE_COLORS.get(phase_name, "#DDDDDD"),
+                alpha=0.14,
+                linewidth=0,
+            )
+        trace_ax.plot(
+            trace["time_s"], trace["left_relative_aperture"],
+            color="#0072B2", linewidth=1.2, label="Left tool",
+        )
+        trace_ax.plot(
+            trace["time_s"], trace["right_relative_aperture"],
+            color="#D55E00", linewidth=1.2, label="Right tool",
+        )
+        handles = [
+            plt.Line2D([0], [0], color="#0072B2", linewidth=1.4, label="Left tool"),
+            plt.Line2D([0], [0], color="#D55E00", linewidth=1.4, label="Right tool"),
+        ]
+        trace_ax.legend(handles=handles, loc="upper right", ncol=2, frameon=False)
+    trace_ax.set_ylim(-0.05, 1.05)
+    trace_ax.set_ylabel("Relative aperture")
+    trace_ax.set_xlabel("Cycle time (s)")
+    trace_ax.set_title("Example phase-aligned aperture trace", fontsize=9)
+    panel_label(trace_ax, "a")
+
+    ordered = associations.iloc[::-1].reset_index(drop=True)
+    y = np.arange(len(ordered))
+    colours = np.where(ordered["q"].lt(0.05), "#0072B2", "#777777")
+    forest_ax.axvline(0, color="#333333", linewidth=0.7, linestyle="--")
+    forest_ax.errorbar(
+        ordered["combined_rho"],
+        y,
+        xerr=np.vstack(
+            [
+                ordered["combined_rho"] - ordered["ci_low"],
+                ordered["ci_high"] - ordered["combined_rho"],
+            ]
+        ),
+        fmt="none",
+        ecolor="#777777",
+        elinewidth=0.9,
+        capsize=2,
+    )
+    forest_ax.scatter(ordered["combined_rho"], y, c=colours, s=24, zorder=3)
+    forest_ax.set_yticks(y, ordered["label"])
+    forest_ax.set_xlim(-0.55, 0.55)
+    forest_ax.set_xlabel("Within-cohort association with procedure volume (Spearman $\\rho$)")
+    forest_ax.set_title("Whole-recording jaw measurements", fontsize=9)
+    panel_label(forest_ax, "b")
+
+    for ax, dataset, label in zip(
+        phase_axes,
+        ["BAPES2024", "7DOF2024"],
+        ["c", "d"],
+    ):
+        cohort = phase_metrics.loc[phase_metrics["dataset"].eq(dataset)]
+        phases = ["reach", "grasp", "transfer", "place"]
+        values = [cohort[f"{phase}_change_rate"].dropna() for phase in phases]
+        boxes = ax.boxplot(values, patch_artist=True, tick_labels=[nice(p) for p in phases], showfliers=False)
+        for patch, phase in zip(boxes["boxes"], phases):
+            patch.set_facecolor(PHASE_COLORS[phase])
+            patch.set_alpha(0.65)
+        for index, series in enumerate(values, start=1):
+            jitter = np.linspace(-0.10, 0.10, len(series)) if len(series) else []
+            ax.scatter(np.asarray(jitter) + index, series, s=11, color="#333333", alpha=0.55, zorder=3)
+        ax.set_ylabel("Relative aperture change per second")
+        ax.set_title(f"{dataset_label(dataset)} (n={len(cohort)})", fontsize=9)
+        ax.tick_params(axis="x", rotation=18)
         panel_label(ax, label)
-    fig.tight_layout()
+    fig.subplots_adjust(left=0.25, right=0.98, top=0.97, bottom=0.08)
     save_fig(fig, "fig8_jaw_rotation_components")
 
 
@@ -3550,10 +4538,38 @@ def plot_workspace_heatmaps(motion: pd.DataFrame) -> None:
         sub["tool"] = tool
         long_rows.append(sub)
     pos = pd.concat(long_rows, ignore_index=True).dropna(subset=["x", "y", "z"])
-    planes = [("x", "y", "Camera X (mm)", "Camera Y (mm)"), ("x", "z", "Camera X (mm)", "Depth Z (mm)"), ("y", "z", "Camera Y (mm)", "Depth Z (mm)")]
-    fig, axes = plt.subplots(len(planes), len(DATASET_ORDER), figsize=(7.4, 6.4), sharex=False, sharey=False)
+    planes = [
+        (
+            "x",
+            "y",
+            "Horizontal position in camera view, X (mm)",
+            "Vertical position in camera view, Y (mm)",
+            "Camera image plane (X-Y)",
+        ),
+        (
+            "x",
+            "z",
+            "Horizontal position in camera view, X (mm)",
+            "Depth from camera, Z (mm)",
+            "Horizontal position and depth (X-Z)",
+        ),
+        (
+            "y",
+            "z",
+            "Vertical position in camera view, Y (mm)",
+            "Depth from camera, Z (mm)",
+            "Vertical position and depth (Y-Z)",
+        ),
+    ]
+    fig, axes = plt.subplots(
+        len(planes),
+        len(DATASET_ORDER),
+        figsize=(7.4, 7.4),
+        sharex=False,
+        sharey=False,
+    )
     mesh = None
-    for r, (a, b, xlabel, ylabel) in enumerate(planes):
+    for r, (a, b, xlabel, ylabel, _) in enumerate(planes):
         for c, ds in enumerate(DATASET_ORDER):
             ax = axes[r, c]
             g = pos[pos["dataset"] == ds]
@@ -3572,14 +4588,33 @@ def plot_workspace_heatmaps(motion: pd.DataFrame) -> None:
             )
             if r == 0:
                 ax.set_title(dataset_label(ds), fontsize=8)
+            ax.set_xlabel(xlabel, fontsize=6.5, labelpad=2)
             if c == 0:
-                ax.set_ylabel(ylabel)
-                panel_label(ax, chr(ord("a") + r))
-            ax.set_xlabel(xlabel if r == len(planes) - 1 else "")
+                ax.set_ylabel(ylabel, fontsize=6.5, labelpad=2)
+            ax.set_aspect("equal", adjustable="box")
             ax.tick_params(labelsize=6)
-    fig.subplots_adjust(left=0.10, right=0.98, top=0.96, bottom=0.16, wspace=0.24, hspace=0.28)
+    fig.subplots_adjust(
+        left=0.11,
+        right=0.98,
+        top=0.89,
+        bottom=0.13,
+        wspace=0.30,
+        hspace=0.62,
+    )
+    for r, (_, _, _, _, row_title) in enumerate(planes):
+        left = axes[r, 0].get_position()
+        right = axes[r, -1].get_position()
+        fig.text(
+            (left.x0 + right.x1) / 2,
+            left.y1 + 0.037,
+            f"({chr(ord('a') + r)}) {row_title}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+            fontweight="bold",
+        )
     if mesh is not None:
-        cax = fig.add_axes([0.30, 0.055, 0.40, 0.018])
+        cax = fig.add_axes([0.30, 0.040, 0.40, 0.018])
         colourbar = fig.colorbar(mesh, cax=cax, orientation="horizontal")
         colourbar.set_label("Relative sampling density within each panel", fontsize=7)
         colourbar.ax.tick_params(labelsize=6)
@@ -3871,6 +4906,7 @@ def plot_cohort_radar(df: pd.DataFrame) -> None:
 
 
 def plot_dataset_metric_matrix(df: pd.DataFrame, proxy: pd.DataFrame) -> None:
+    """Compare cohort means without assigning a favourable direction."""
     merged = df.copy()
     merged["Coordination-control composite"] = (
         proxy["Coordination-control composite"].to_numpy() if len(proxy) == len(df) else np.nan
@@ -3901,10 +4937,10 @@ def plot_dataset_metric_matrix(df: pd.DataFrame, proxy: pd.DataFrame) -> None:
         ("tool2_num_speed_peaks", "Right tool speed peaks", -1),
     ]
     rows = []
-    for col, label, direction in specs:
+    for col, label, _direction in specs:
         if col not in merged.columns:
             continue
-        vals = pd.to_numeric(merged[col], errors="coerce") * direction
+        vals = pd.to_numeric(merged[col], errors="coerce")
         sd = vals.std(ddof=0)
         z = (vals - vals.mean()) / (sd if sd and np.isfinite(sd) else 1.0)
         for ds in DATASET_ORDER:
@@ -3918,22 +4954,49 @@ def plot_dataset_metric_matrix(df: pd.DataFrame, proxy: pd.DataFrame) -> None:
         for c, ds in enumerate(DATASET_ORDER):
             v = mat_df[(mat_df["metric"] == metric) & (mat_df["dataset"] == ds)]["z"]
             mat[c, r] = float(v.iloc[0]) if len(v) else np.nan
-    fig = plt.figure(figsize=(10.8, 3.8))
-    ax = fig.add_axes([0.08, 0.30, 0.90, 0.38])
-    im = ax.imshow(mat, cmap="RdBu_r", vmin=-1.2, vmax=1.2, aspect="auto")
-    ax.set_xticks(np.arange(len(metrics)), metrics, rotation=45, ha="left")
-    ax.xaxis.tick_top()
-    ax.tick_params(axis="x", top=True, bottom=False, labeltop=True, labelbottom=False, pad=1)
-    ax.set_yticks(np.arange(len(DATASET_ORDER)), [dataset_label(ds) for ds in DATASET_ORDER])
-    for r in range(mat.shape[0]):
-        for c in range(mat.shape[1]):
-            if np.isfinite(mat[r, c]):
-                ax.text(c, r, f"{mat[r, c]:.1f}", ha="center", va="center", fontsize=6)
-            else:
-                ax.text(c, r, "NA", ha="center", va="center", fontsize=6, color="#555555")
-    cax = fig.add_axes([0.24, 0.10, 0.52, 0.055])
+    split_at = 9
+    groups = [
+        ("Timing and bimanual movement", metrics[:split_at], mat[:, :split_at]),
+        ("Tool motion and workspace", metrics[split_at:], mat[:, split_at:]),
+    ]
+    fig = plt.figure(figsize=(10.8, 6.0))
+    axes = [
+        fig.add_axes([0.08, 0.62, 0.90, 0.18]),
+        fig.add_axes([0.08, 0.25, 0.90, 0.18]),
+    ]
+    im = None
+    for panel_index, (ax, (title, group_metrics, group_mat)) in enumerate(zip(axes, groups)):
+        im = ax.imshow(group_mat, cmap="RdBu_r", vmin=-1.2, vmax=1.2, aspect="auto")
+        ax.set_xticks(
+            np.arange(len(group_metrics)),
+            group_metrics,
+            rotation=42,
+            ha="left",
+        )
+        ax.xaxis.tick_top()
+        ax.tick_params(
+            axis="x",
+            top=True,
+            bottom=False,
+            labeltop=True,
+            labelbottom=False,
+            pad=1,
+        )
+        ax.set_yticks(
+            np.arange(len(DATASET_ORDER)),
+            [dataset_label(ds) for ds in DATASET_ORDER],
+        )
+        ax.set_ylabel(title, labelpad=11)
+        panel_label(ax, chr(ord("a") + panel_index))
+        for r in range(group_mat.shape[0]):
+            for c in range(group_mat.shape[1]):
+                if np.isfinite(group_mat[r, c]):
+                    ax.text(c, r, f"{group_mat[r, c]:.1f}", ha="center", va="center", fontsize=6)
+                else:
+                    ax.text(c, r, "NA", ha="center", va="center", fontsize=6, color="#555555")
+    cax = fig.add_axes([0.24, 0.07, 0.52, 0.035])
     cbar = fig.colorbar(im, cax=cax, orientation="horizontal")
-    cbar.set_label("Cohort mean, oriented z-score")
+    cbar.set_label("Cohort mean (standard deviations from the pooled mean)")
     save_fig(fig, "fig17_dataset_metric_matrix")
 
 
@@ -4384,6 +5447,204 @@ def plot_time_synchrony_quadrants(df: pd.DataFrame, clusters: pd.DataFrame) -> N
     )
 
 
+def plot_multidimensional_assessment(
+    df: pd.DataFrame,
+    clusters: pd.DataFrame,
+) -> None:
+    """Show why experience, duration, and coordination are complementary."""
+    if clusters.empty or "metric_cluster" not in clusters:
+        return
+    required = {"total_time", "bimanual_correlation", "trial_key"}
+    if not required.issubset(df.columns):
+        return
+
+    clustered = clusters.dropna(subset=["skill_category", "metric_cluster"]).copy()
+    matrix = (
+        pd.crosstab(clustered["skill_category"], clustered["metric_cluster"])
+        .reindex(index=SKILL_ORDER, columns=BAND_ORDER)
+        .fillna(0)
+        .astype(int)
+    )
+    mismatch_specs = [
+        (
+            "Novice in\nupper band",
+            (clustered["skill_category"] == "novice")
+            & (clustered["metric_cluster"] == "metric_high"),
+            int((clustered["skill_category"] == "novice").sum()),
+        ),
+        (
+            "Expert in\nlower band",
+            (clustered["skill_category"] == "expert")
+            & (clustered["metric_cluster"] == "metric_low"),
+            int((clustered["skill_category"] == "expert").sum()),
+        ),
+        (
+            "Novice outside\nlower band",
+            (clustered["skill_category"] == "novice")
+            & (clustered["metric_cluster"] != "metric_low"),
+            int((clustered["skill_category"] == "novice").sum()),
+        ),
+        (
+            "Expert outside\nupper band",
+            (clustered["skill_category"] == "expert")
+            & (clustered["metric_cluster"] != "metric_high"),
+            int((clustered["skill_category"] == "expert").sum()),
+        ),
+    ]
+
+    identifier_counts = df.groupby("trial_key")["trial_key"].transform("size")
+    primary = df.loc[identifier_counts.eq(1)].copy()
+    fig = plt.figure(figsize=(8.7, 6.1))
+    outer = fig.add_gridspec(
+        2,
+        1,
+        height_ratios=[1.0, 1.05],
+        hspace=0.50,
+        left=0.08,
+        right=0.98,
+        top=0.97,
+        bottom=0.12,
+    )
+    upper = outer[0].subgridspec(1, 2, width_ratios=[1.0, 1.45], wspace=0.42)
+    lower = outer[1].subgridspec(1, 3, wspace=0.26)
+
+    ax = fig.add_subplot(upper[0])
+    im = ax.imshow(matrix.to_numpy(), cmap="YlGnBu", vmin=0)
+    ax.set_xticks(
+        np.arange(len(BAND_ORDER)),
+        [BAND_SHORT_LABELS[band].replace(" ", "\n") for band in BAND_ORDER],
+    )
+    ax.set_yticks(np.arange(len(SKILL_ORDER)), [nice(skill) for skill in SKILL_ORDER])
+    ax.set_xlabel("Motion-score band")
+    ax.set_ylabel("Procedure-count label")
+    for row in range(matrix.shape[0]):
+        for column in range(matrix.shape[1]):
+            ax.text(
+                column,
+                row,
+                str(int(matrix.iloc[row, column])),
+                ha="center",
+                va="center",
+                fontsize=9,
+                weight="bold",
+                color="#111111",
+            )
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    cbar.set_label("Recordings")
+    panel_label(ax, "a")
+
+    ax = fig.add_subplot(upper[1])
+    counts = np.asarray(
+        [int(mask.sum()) for _, mask, _ in mismatch_specs], dtype=float
+    )
+    denominators = np.asarray(
+        [denominator or np.nan for _, _, denominator in mismatch_specs],
+        dtype=float,
+    )
+    percentages = 100 * counts / denominators
+    positions = np.arange(len(mismatch_specs))
+    ax.bar(
+        positions,
+        counts,
+        color=["#4C78A8", "#E45756", "#72B7B2", "#F58518"],
+        width=0.72,
+    )
+    for index, (count, percentage) in enumerate(zip(counts, percentages)):
+        ax.text(
+            index,
+            count + 0.7,
+            f"{int(count)}\n({percentage:.0f}%)",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+        )
+    ax.set_xticks(positions, [label for label, _, _ in mismatch_specs])
+    ax.set_ylabel("Recordings")
+    ax.set_ylim(0, max(counts) * 1.24 if len(counts) else 1)
+    panel_label(ax, "b")
+
+    scatter_axes = []
+    for panel_index, (axis_spec, dataset) in enumerate(zip(lower, DATASET_ORDER)):
+        ax = fig.add_subplot(axis_spec, sharey=scatter_axes[0] if scatter_axes else None)
+        scatter_axes.append(ax)
+        cohort = primary[primary["dataset"] == dataset].dropna(
+            subset=["total_time", "bimanual_correlation"]
+        )
+        for skill in SKILL_ORDER:
+            subset = cohort[cohort["skill_category"] == skill]
+            ax.scatter(
+                subset["total_time"],
+                subset["bimanual_correlation"],
+                s=22,
+                alpha=0.82,
+                color=SKILL_COLORS[skill],
+                label=nice(skill),
+            )
+        ax.axvline(cohort["total_time"].median(), color="#555555", lw=0.8, ls=":")
+        ax.axhline(
+            cohort["bimanual_correlation"].median(),
+            color="#555555",
+            lw=0.8,
+            ls=":",
+        )
+        rho, _ = stats.spearmanr(
+            cohort["total_time"],
+            cohort["bimanual_correlation"],
+            nan_policy="omit",
+        )
+        ci_low, ci_high = bootstrap_spearman_ci(
+            cohort["total_time"], cohort["bimanual_correlation"]
+        )
+        ax.text(
+            0.04,
+            0.96,
+            f"$n={len(cohort)}$\n$\\rho={rho:.2f}$ [{ci_low:.2f}, {ci_high:.2f}]",
+            transform=ax.transAxes,
+            ha="left",
+            va="top",
+            fontsize=6.8,
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.78, pad=1.4),
+        )
+        ax.text(
+            0.04,
+            0.06,
+            "Shorter",
+            transform=ax.transAxes,
+            ha="left",
+            va="bottom",
+            fontsize=6.2,
+            color="#555555",
+        )
+        ax.text(
+            0.96,
+            0.06,
+            "Longer",
+            transform=ax.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=6.2,
+            color="#555555",
+        )
+        ax.set_title(dataset_label(dataset), fontsize=8)
+        ax.set_xlabel("Analysed duration (s)")
+        if panel_index == 0:
+            ax.set_ylabel("Bimanual correlation")
+        else:
+            ax.tick_params(labelleft=False)
+        panel_label(ax, chr(ord("c") + panel_index))
+
+    handles, labels = scatter_axes[-1].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        frameon=False,
+        ncol=3,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.015),
+    )
+    save_fig(fig, "fig29_multidimensional_assessment")
+
+
 def plot_continuous_performance_validation(
     proxy: pd.DataFrame,
     clusters: pd.DataFrame,
@@ -4547,7 +5808,6 @@ def write_tables(
     phase_inferential = phase_trials[phase_trials["trial_key"].isin(independent_keys)]
     analysis_unit_rows = [
         "Public Zenodo version 1.0 & 37 & 37 & Currently released subset \\\\",
-        "Earlier LASK report & 114 & -- & Published collection summary \\\\",
         f"Dataset inventory & {len(df)} & {df['trial_key'].nunique()} & All available recordings \\\\",
         f"Primary inferential set & {int(identifier_counts.eq(1).sum())} & "
         f"{df.loc[identifier_counts.eq(1), 'trial_key'].nunique()} & "
@@ -5140,6 +6400,14 @@ def write_reproducibility_manifest() -> None:
             "path": str((ROOT / "scripts" / "build_scirep_analysis.py").relative_to(ROOT)),
             "sha256": file_sha256(ROOT / "scripts" / "build_scirep_analysis.py"),
         },
+        "experience_benchmark_script": {
+            "path": str((ROOT / "scripts" / "benchmark_experience_models.py").relative_to(ROOT)),
+            "sha256": file_sha256(ROOT / "scripts" / "benchmark_experience_models.py"),
+        },
+        "cohort_calibration_benchmark_script": {
+            "path": str((ROOT / "scripts" / "benchmark_cohort_calibration.py").relative_to(ROOT)),
+            "sha256": file_sha256(ROOT / "scripts" / "benchmark_cohort_calibration.py"),
+        },
         "python": {
             "executable": Path(sys.executable).name,
             "version": sys.version,
@@ -5158,6 +6426,8 @@ def write_reproducibility_manifest() -> None:
         "random_seeds": {
             "bootstrap_and_sampling": 20260618,
             "classification_cv": 13,
+            "nested_experience_prediction": 20260817,
+            "cohort_calibration_prediction": 20260817,
             "pca": 20260618,
             "kmeans": 20260618,
         },
@@ -5171,6 +6441,8 @@ def main() -> None:
     trials, cycles, frames = load_phase_data()
     all_df = load_all_trial_data(frames)
     feature_stats = feature_statistics(all_df)
+    ordered_patterns = consistent_experience_patterns(all_df, feature_stats)
+    duration_adjusted_features = duration_adjusted_feature_analysis(all_df)
     classification = run_classification(all_df)
     proxy = osats_proxy_scores(all_df)
     adjusted_models = cohort_adjusted_models(all_df, proxy)
@@ -5192,21 +6464,36 @@ def main() -> None:
     )
     held_out_band_statistics(clusters)
     metric_band_classification = run_metric_band_classification(clusters)
+    from benchmark_experience_models import main as run_experience_prediction_benchmark
+    from benchmark_cohort_calibration import main as run_cohort_calibration_benchmark
+
+    run_experience_prediction_benchmark()
+    run_cohort_calibration_benchmark()
     motion_sample = load_origin_motion(all_df)
     phase_statistics(trials, cycles, frames)
     phase_kinematics = phase_specific_kinematics(frames, clusters)
+    jaw_metrics, jaw_associations, jaw_phase_metrics, jaw_trace = jaw_voltage_analysis(
+        all_df,
+        frames,
+    )
     plot_training_systems_context()
     plot_collection_setups()
     plot_task_setup_overview()
     plot_peg_transfer_cycle_frames()
     plot_cohort(all_df, trials)
-    plot_feature_effects(feature_stats)
+    plot_feature_effects(feature_stats, duration_adjusted_features)
+    plot_consistent_experience_patterns(all_df, ordered_patterns)
     plot_phase_timing(cycles, trials)
     plot_experience_links(all_df, trials)
     plot_osats_proxy(proxy, clusters, cluster_summary)
     plot_kmeans_clusters(clusters, cluster_summary)
     plot_motion_domains(all_df)
-    plot_jaw_and_rotation(all_df)
+    plot_jaw_and_rotation(
+        jaw_metrics,
+        jaw_associations,
+        jaw_phase_metrics,
+        jaw_trace,
+    )
     plot_workspace_heatmaps(motion_sample)
     plot_skill_workspace_xy(motion_sample)
     plot_phase_by_cluster(trials, clusters)
@@ -5217,6 +6504,7 @@ def main() -> None:
     plot_phase_bottlenecks(trials, cycles, clusters)
     plot_cohort_effect_forest(all_df)
     plot_time_synchrony_quadrants(all_df, clusters)
+    plot_multidimensional_assessment(all_df, clusters)
     plot_continuous_performance_validation(proxy, clusters)
     write_tables(
         all_df,
@@ -5236,6 +6524,9 @@ def main() -> None:
         "all_trials": int(len(all_df)),
         "phase_trials": int(len(trials)),
         "phase_cycles": int(len(cycles)),
+        "jaw_trials": int(len(jaw_metrics)),
+        "jaw_phase_trials": int(len(jaw_phase_metrics)),
+        "jaw_associations": jaw_associations.to_dict(orient="records"),
         "feature_dictionary_rows": int(len(feature_dictionary)),
         "trimming_rule_validation": trim_validation.to_dict(orient="records"),
         "processing_sensitivity": processing_checks.to_dict(

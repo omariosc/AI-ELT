@@ -15,6 +15,8 @@ data/derived/*
 !data/derived/cohort_adjusted_models.csv
 !data/derived/cohort_specific_effects.csv
 !data/derived/continuous_performance_validation.csv
+!data/derived/consistent_experience_patterns.csv
+!data/derived/consistent_experience_pattern_medians.csv
 !data/derived/coordination_control_time_correlation.csv
 !data/derived/cycle_duration_ci.csv
 !data/derived/feature_dictionary.csv
@@ -23,10 +25,15 @@ data/derived/*
 !data/derived/kmeans_validation.csv
 !data/derived/jerk_exclusion_contextual_correlations.csv
 !data/derived/jerk_exclusion_score_sensitivity.csv
+!data/derived/jaw_phase_comparisons.csv
+!data/derived/jaw_smoothing_sensitivity.csv
+!data/derived/jaw_voltage_statistics.csv
 !data/derived/metric_band_classification_comparison.csv
 !data/derived/metric_band_classification_summary.json
 !data/derived/phase_fraction_ci.csv
 !data/derived/phase_kinematics_summary.csv
+!data/derived/phase_motion_associations.csv
+!data/derived/phase_motion_nested_summary.csv
 !data/derived/phase_segment_summary.csv
 !data/derived/position_smoothing_sensitivity.csv
 !data/derived/processing_sensitivity.csv
@@ -36,7 +43,9 @@ data/derived/*
 paper/figures/*
 !paper/figures/fig1_cohort_structure.png
 !paper/figures/fig2_feature_effects.png
+!paper/figures/fig3_consistent_experience_patterns.png
 !paper/figures/fig3_phase_timing.png
 !paper/figures/fig4_experience_links.png
+!paper/figures/fig8_jaw_voltage_analysis.png
 !paper/figures/fig21_cohort_effect_forest.png
 !paper/figures/fig23_continuous_performance_validation.png

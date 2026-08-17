@@ -44,13 +44,18 @@ def main() -> None:
         ROOT / "docs" / "FEATURES.md",
         ROOT / "docs" / "PHASES.md",
         ROOT / "scripts" / "build_scirep_analysis.py",
+        ROOT / "scripts" / "analyze_phase_motion_features.py",
         DERIVED / "analysis_manifest.json",
         DERIVED / "analysis_summary.json",
         DERIVED / "feature_dictionary.csv",
         DERIVED / "all_trial_feature_statistics.csv",
         DERIVED / "cohort_adjusted_models.csv",
+        DERIVED / "consistent_experience_patterns.csv",
+        DERIVED / "consistent_experience_pattern_medians.csv",
         DERIVED / "jerk_exclusion_contextual_correlations.csv",
         DERIVED / "jerk_exclusion_score_sensitivity.csv",
+        DERIVED / "phase_motion_associations.csv",
+        DERIVED / "phase_motion_nested_summary.csv",
     ]
     for path in required_files:
         require(path.is_file() and path.stat().st_size > 0, f"Missing required file: {path}")
@@ -76,6 +81,23 @@ def main() -> None:
     require(
         not significant_group_tests,
         "No three-group feature test should survive correction",
+    )
+
+    ordered_rows = read_csv("consistent_experience_patterns.csv")
+    require(len(ordered_rows) == 4, "Expected four convergent experience patterns")
+    require(
+        {row["feature"] for row in ordered_rows}
+        == {
+            "total_time",
+            "tool1_normalized_jerk",
+            "tool2_normalized_jerk",
+            "tool2_num_speed_peaks",
+        },
+        "Unexpected convergent experience patterns",
+    )
+    require(
+        all(float(row["spearman_q"]) < 0.05 for row in ordered_rows),
+        "Each convergent pattern must retain a corrected continuous association",
     )
 
     bimanual = next(
@@ -120,6 +142,47 @@ def main() -> None:
         "Unexpected set of corrected cohort-adjusted procedure effects",
     )
 
+    jaw_rows = read_csv("jaw_voltage_statistics.csv")
+    require(len(jaw_rows) == 7, "Expected seven whole-recording jaw checks")
+    require(
+        all(int(row["n"]) == 83 for row in jaw_rows),
+        "Expected 83 primary recordings in each jaw check",
+    )
+    require(
+        min(float(row["q"]) for row in jaw_rows) >= 0.05,
+        "No whole-recording jaw check should survive correction",
+    )
+    jaw_sensitivity = read_csv("jaw_smoothing_sensitivity.csv")
+    require(
+        len(jaw_sensitivity) == 21,
+        "Expected seven jaw checks under three smoothing windows",
+    )
+    require(
+        {int(float(row["window_frames"])) for row in jaw_sensitivity} == {5, 7, 11},
+        "Unexpected jaw smoothing windows",
+    )
+    jaw_phases = read_csv("jaw_phase_comparisons.csv")
+    require(len(jaw_phases) == 4, "Expected one overall and three planned jaw-phase tests")
+
+    phase_associations = read_csv("phase_motion_associations.csv")
+    require(len(phase_associations) == 10, "Expected ten prespecified phase associations")
+    corrected_phase = [row for row in phase_associations if float(row["q_value"]) < 0.05]
+    require(
+        len(corrected_phase) == 1
+        and corrected_phase[0]["feature"] == "transport_place_speed_peaks_per_s",
+        "Unexpected corrected phase-motion association",
+    )
+    phase_model = read_csv("phase_motion_nested_summary.csv")
+    require(len(phase_model) == 1, "Expected one nested phase-model summary")
+    require(
+        0.88 < float(phase_model[0]["macro_balanced_accuracy"]) < 0.90,
+        "Unexpected phase-model cohort-mean balanced accuracy",
+    )
+    require(
+        0.82 < float(phase_model[0]["pooled_balanced_accuracy"]) < 0.84,
+        "Unexpected phase-model pooled balanced accuracy",
+    )
+
     manifest = read_json("analysis_manifest.json")
     analysis_script = ROOT / manifest["analysis_script"]["path"]
     require(
@@ -136,8 +199,10 @@ def main() -> None:
     figures = [
         "fig1_cohort_structure.png",
         "fig2_feature_effects.png",
+        "fig3_consistent_experience_patterns.png",
         "fig3_phase_timing.png",
         "fig4_experience_links.png",
+        "fig8_jaw_voltage_analysis.png",
         "fig21_cohort_effect_forest.png",
         "fig23_continuous_performance_validation.png",
     ]
@@ -148,7 +213,9 @@ def main() -> None:
     print(
         "Validated LASK aggregate release: "
         "115 recordings, 38 phase recordings, 425 cycles, "
-        "29 feature tests, 8 corrected continuous associations."
+        "29 feature tests, 8 corrected continuous associations, "
+        "4 convergent ordered patterns, 10 phase tests, "
+        "phase-model balanced accuracy 0.89."
     )
 
 

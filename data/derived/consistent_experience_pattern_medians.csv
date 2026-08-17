@@ -1,0 +1,37 @@
+feature,label,dataset,cohort,procedure_group,median
+total_time,Analysed duration,BAPES2024,Paediatric,novice,197.69230769230768
+total_time,Analysed duration,BAPES2024,Paediatric,intermediate,183.0
+total_time,Analysed duration,BAPES2024,Paediatric,expert,161.92307692307693
+total_time,Analysed duration,6DOF2023,Urology 1 (2023),novice,172.1153846153846
+total_time,Analysed duration,6DOF2023,Urology 1 (2023),intermediate,162.5
+total_time,Analysed duration,6DOF2023,Urology 1 (2023),expert,150.3269230769231
+total_time,Analysed duration,7DOF2024,Urology 2 (2024),novice,198.6153846153846
+total_time,Analysed duration,7DOF2024,Urology 2 (2024),intermediate,176.0
+total_time,Analysed duration,7DOF2024,Urology 2 (2024),expert,152.53846153846155
+tool1_normalized_jerk,Left tool normalised jerk,BAPES2024,Paediatric,novice,2252595.850602884
+tool1_normalized_jerk,Left tool normalised jerk,BAPES2024,Paediatric,intermediate,2094622.911892851
+tool1_normalized_jerk,Left tool normalised jerk,BAPES2024,Paediatric,expert,1493409.185769
+tool1_normalized_jerk,Left tool normalised jerk,6DOF2023,Urology 1 (2023),novice,6446400.474666757
+tool1_normalized_jerk,Left tool normalised jerk,6DOF2023,Urology 1 (2023),intermediate,6042976.778739142
+tool1_normalized_jerk,Left tool normalised jerk,6DOF2023,Urology 1 (2023),expert,4752936.224538932
+tool1_normalized_jerk,Left tool normalised jerk,7DOF2024,Urology 2 (2024),novice,2164956.7578960606
+tool1_normalized_jerk,Left tool normalised jerk,7DOF2024,Urology 2 (2024),intermediate,1441216.0108524014
+tool1_normalized_jerk,Left tool normalised jerk,7DOF2024,Urology 2 (2024),expert,1231029.9586385023
+tool2_normalized_jerk,Right tool normalised jerk,BAPES2024,Paediatric,novice,2119967.005937621
+tool2_normalized_jerk,Right tool normalised jerk,BAPES2024,Paediatric,intermediate,1829363.7439218387
+tool2_normalized_jerk,Right tool normalised jerk,BAPES2024,Paediatric,expert,1285408.948097779
+tool2_normalized_jerk,Right tool normalised jerk,6DOF2023,Urology 1 (2023),novice,6434385.826612025
+tool2_normalized_jerk,Right tool normalised jerk,6DOF2023,Urology 1 (2023),intermediate,6286005.099966522
+tool2_normalized_jerk,Right tool normalised jerk,6DOF2023,Urology 1 (2023),expert,6267447.928095628
+tool2_normalized_jerk,Right tool normalised jerk,7DOF2024,Urology 2 (2024),novice,2344856.147176226
+tool2_normalized_jerk,Right tool normalised jerk,7DOF2024,Urology 2 (2024),intermediate,1665495.5629712816
+tool2_normalized_jerk,Right tool normalised jerk,7DOF2024,Urology 2 (2024),expert,1367588.883128289
+tool2_num_speed_peaks,Right tool speed peaks,BAPES2024,Paediatric,novice,392.5
+tool2_num_speed_peaks,Right tool speed peaks,BAPES2024,Paediatric,intermediate,373.0
+tool2_num_speed_peaks,Right tool speed peaks,BAPES2024,Paediatric,expert,330.0
+tool2_num_speed_peaks,Right tool speed peaks,6DOF2023,Urology 1 (2023),novice,414.0
+tool2_num_speed_peaks,Right tool speed peaks,6DOF2023,Urology 1 (2023),intermediate,384.0
+tool2_num_speed_peaks,Right tool speed peaks,6DOF2023,Urology 1 (2023),expert,360.0
+tool2_num_speed_peaks,Right tool speed peaks,7DOF2024,Urology 2 (2024),novice,344.0
+tool2_num_speed_peaks,Right tool speed peaks,7DOF2024,Urology 2 (2024),intermediate,314.0
+tool2_num_speed_peaks,Right tool speed peaks,7DOF2024,Urology 2 (2024),expert,299.0

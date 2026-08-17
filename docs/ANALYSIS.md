@@ -7,7 +7,7 @@ with laparoscopic experience during peg transfer, and whether they can support
 transparent quantitative feedback.
 
 The intended clinical use is not to replace an educator with an unvalidated
-score. It is to identify reproducible measurements that could complement
+score. It is to identify candidate measurements that could complement
 expert observation, make feedback more specific, and support later automated
 assessment after external validation.
 
@@ -88,6 +88,18 @@ estimates how often a value from one group exceeds a value from the other after
 accounting for ties. Confidence intervals use 3,000 bootstrap resamples within
 cohort.
 
+After the primary tests, a post hoc convergence screen identified measurements
+that met both of the following descriptive criteria:
+
+1. novice, intermediate, and expert medians followed the prespecified direction
+   in all three cohorts; and
+2. the within-cohort meta-analytic association with continuous procedure volume
+   retained a false discovery rate corrected `q < 0.05`.
+
+This intersection does not create a new probability test. It prioritises
+cross-cohort-consistent patterns within this dataset for presentation and
+prospective validation.
+
 Bimanual correlation had substantial between-cohort heterogeneity. A
 random-effects sensitivity analysis therefore used DerSimonian-Laird
 between-cohort variance and a modified Knapp-Hartung interval on Fisher's
@@ -128,7 +140,21 @@ contributes equally despite unequal sample sizes.
 
 ## Main results
 
-### Procedure groups did not define clear motion classes
+### Four whole-task patterns were ordered in every cohort
+
+Four measurements passed the convergence screen. From novice to expert groups,
+median task duration was 13--23% shorter, left-tool normalised jerk was 26--43%
+lower, right-tool normalised jerk was 3--42% lower, and right-tool stop-start
+peaks were 13--16% fewer across the three cohorts. Their experience-aligned
+meta-analytic correlations were 0.29--0.34 after false discovery rate
+correction. The complete values are in
+[`consistent_experience_patterns.csv`](../data/derived/consistent_experience_patterns.csv).
+
+These results support an interpretable whole-task efficiency profile. They do
+not imply that every high-volume participant outperforms every low-volume
+participant, because individual distributions still overlap.
+
+### Procedure groups did not define perfectly separate motion classes
 
 No novice, intermediate, and expert feature comparison remained significant
 after false discovery rate correction. This is an important result. It means
@@ -272,6 +298,26 @@ The current phase analysis should be used to:
 
 It should not yet be used to assign clinical grades.
 
+## Relative jaw aperture analysis
+
+Jaw voltage was reprocessed within the same curated task interval for 83
+primary recordings from Paediatric and Urology 2. Each tool trace was converted
+to a relative within-recording aperture range after a five-frame, 0.38-second
+Savitzky-Golay filter. Seven whole-recording summaries covered voltage
+excursion, change rate, aperture-cycle rate, bilateral balance, and left-right
+rate correlation. None retained an association with reported procedure volume
+after false discovery rate correction. The conclusion was unchanged with
+seven-frame and 11-frame smoothing windows.
+
+Twenty-four phase-labelled primary recordings also had jaw voltage. Relative
+aperture change differed across reach, grasp, transfer, and place. It was
+greater during grasp than reach and during transfer than place after
+correction, while grasp and transfer were similar. This supports the jaw
+channel as a way to locate handling activity within a transfer cycle. It does
+not establish absolute jaw angle, secure object possession, or a stand-alone
+measure of skill. Combining relative aperture with video is the appropriate
+next step for detecting failed grasp, corrective handling, and release errors.
+
 ## Potential value to surgeons and trainers
 
 The current evidence prioritises three different roles for future validation.
@@ -280,7 +326,8 @@ The current evidence prioritises three different roles for future validation.
   speed peaks, travel distance, and bimanual correlation. Prospective studies
   must show whether presenting these values improves learning.
 - **Contextual diagnostics:** phase timing, raw speed, rotation, workspace use,
-  and jaw voltage. These may explain a performance pattern but are too
+  and relative jaw aperture. These may explain a performance pattern, and jaw
+  activity can locate handling within grasp and transfer, but they are too
   acquisition-dependent or weakly calibrated to grade performance alone.
 - **Unsupported as stand-alone skill labels:** procedure count, a single speed
   threshold, a universally small workspace, or reconstruction of the
@@ -314,6 +361,8 @@ score changes correspond to meaningful training or clinical outcomes.
 
 The analysis entry point is
 [`scripts/build_scirep_analysis.py`](../scripts/build_scirep_analysis.py).
+The recording-level phase-motion models are generated by
+[`scripts/analyze_phase_motion_features.py`](../scripts/analyze_phase_motion_features.py).
 Package versions are pinned in [`requirements.txt`](../requirements.txt).
 
 Random seeds:
@@ -328,6 +377,8 @@ Random seeds:
 Aggregate outputs include:
 
 - [`all_trial_feature_statistics.csv`](../data/derived/all_trial_feature_statistics.csv);
+- [`consistent_experience_patterns.csv`](../data/derived/consistent_experience_patterns.csv);
+- [`consistent_experience_pattern_medians.csv`](../data/derived/consistent_experience_pattern_medians.csv);
 - [`cohort_adjusted_models.csv`](../data/derived/cohort_adjusted_models.csv);
 - [`cohort_specific_effects.csv`](../data/derived/cohort_specific_effects.csv);
 - [`continuous_performance_validation.csv`](../data/derived/continuous_performance_validation.csv);
@@ -335,6 +386,8 @@ Aggregate outputs include:
 - [`kmeans_validation.csv`](../data/derived/kmeans_validation.csv);
 - [`processing_sensitivity.csv`](../data/derived/processing_sensitivity.csv);
 - [`phase_kinematics_summary.csv`](../data/derived/phase_kinematics_summary.csv);
+- [`phase_motion_associations.csv`](../data/derived/phase_motion_associations.csv);
+- [`phase_motion_nested_summary.csv`](../data/derived/phase_motion_nested_summary.csv);
 - [`analysis_manifest.json`](../data/derived/analysis_manifest.json).
 
 Participant-level intermediate tables are deliberately omitted until the

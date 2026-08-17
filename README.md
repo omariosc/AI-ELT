@@ -27,7 +27,9 @@ metadata.
 - [Quantitative analysis](docs/ANALYSIS.md)
 - [Motion feature definitions](docs/FEATURES.md)
 - [Phase annotation protocol](docs/PHASES.md)
+- [Annotation caveats and recording usage notes](docs/ANNOTATION_CAVEATS.md)
 - [Analysis script](scripts/build_scirep_analysis.py)
+- [Phase-motion analysis script](scripts/analyze_phase_motion_features.py)
 - [Aggregate result tables](data/derived)
 - [Representative figures](paper/figures)
 
@@ -87,14 +89,23 @@ cycles. The primary phase set contains 383 cycles.
 
 The main findings are:
 
-- No novice, intermediate, and expert procedure-count comparison remained
-  significant after correction across 29 motion features.
-- Eight features had modest within-cohort associations with lifetime procedure
-  volume. Longer experience was associated with shorter analysed duration,
-  lower normalised jerk, fewer speed peaks, shorter left-tool path length,
-  faster right-tool movement, and bimanual correlation. The bimanual
-  association varied by cohort; its random-effects sensitivity estimate was
-  inconclusive.
+- Four measurements showed novice, intermediate, and expert medians in the
+  experience-associated order in every cohort and retained corrected
+  associations with continuous lifetime procedure volume. They were task
+  duration, left- and right-tool normalised jerk, and right-tool stop-start
+  peaks. Novice-to-expert median reductions were 13--23%, 26--43%, 3--42%, and
+  13--16%, respectively.
+- Eight features retained within-cohort associations with lifetime procedure
+  volume after correction. These included the four ordered measurements,
+  left-tool path length and stop-start peaks, right-tool speed, and bimanual
+  correlation. The bimanual association varied by cohort and is interpreted as
+  a contextual measurement rather than a universal threshold.
+- Phase-specific reach and transport measurements separated novice- and
+  expert-labelled recordings with a mean held-out-cohort balanced accuracy of
+  0.89 after calibration to the unlabelled local cohort and pooled balanced
+  accuracy of 0.83, compared with 0.54 for duration alone. This is an
+  exploratory result from 25 eligible phase-labelled recordings and requires
+  prospective validation.
 - Cohort accounted for 88% and 92% of the variation in left- and right-tool
   speed, respectively. This shows why unadjusted pooling across collection
   settings is misleading.
@@ -109,13 +120,14 @@ The main findings are:
   was calculated from the same motion domains. This is a software consistency
   check and must not be interpreted as independent skill prediction.
 
-Duration, movement smoothness, stop-start peaks, travel distance, and
-coordination between the tools are prioritised for prospective feedback
-validation. Raw speed, workspace size, jaw voltage, and phase fractions are
-less dependable as stand-alone indicators. The current results do not show
-that feedback on any one measurement improves learning, and they do not
-support instructing trainees simply to move faster or to use a smaller
-workspace.
+Task duration, movement smoothness, and stop-start peaks are prioritised for
+prospective feedback validation because their ordered patterns were consistent
+across all three cohorts within this dataset. Travel distance and coordination
+between the tools provide useful supporting context. Relative jaw voltage
+localises instrument actuation during grasp and transfer and is retained as a
+complementary handling signal.
+Together, these measurements can describe what changed during a trial rather
+than assigning performance from procedure count alone.
 
 Full methods, confidence intervals, corrected probability values, sensitivity
 analyses, and limitations are provided in the
@@ -124,6 +136,16 @@ analyses, and limitations are provided in the
 ## Representative results
 
 ### Procedure experience and motion
+
+![Ordered whole-task performance patterns](paper/figures/fig3_consistent_experience_patterns.png)
+
+All 107 independent recordings are shown after conversion to relative
+within-cohort scores. Higher values denote shorter, smoother, or less
+stop-start performance. The novice, intermediate, and expert medians progress
+in the experience-associated direction in every panel, while individual points
+retain the clinically important variation within each experience group.
+
+### Cohort-specific associations
 
 ![Within-cohort experience links](paper/figures/fig4_experience_links.png)
 

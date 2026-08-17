@@ -1,0 +1,2 @@
+macro_balanced_accuracy,macro_ci_low,macro_ci_high,macro_permutation_p,pooled_balanced_accuracy,pooled_ci_low,pooled_ci_high,pooled_permutation_p,pooled_novice_sensitivity,pooled_expert_sensitivity,mean_roc_auc
+0.8869047619047619,0.7857142857142857,0.9761904761904763,0.0009995002498750624,0.8333333333333333,0.7083333333333334,0.9583333333333333,0.0014992503748125937,0.6666666666666666,1.0,0.8595238095238096
