@@ -72,3 +72,8 @@ annotation and an independent reliability sample are planned.
 Phase labels may be used to locate where time, corrections, or dropped-object
 episodes occur. They should not be converted directly into clinical competence
 grades without expert validation.
+
+Some individual recordings carry defects that restrict how their labels may be
+used, for example a recording that may be trained on but must be kept out of
+validation. These are documented in
+[annotation caveats and recording usage notes](ANNOTATION_CAVEATS.md).

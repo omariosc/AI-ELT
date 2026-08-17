@@ -226,6 +226,10 @@ dropped-object labels. It is documented separately in
 - Phase labels were produced by one trained annotator.
 - Study identifiers cannot exclude the possibility that a participant
   attended more than one event under different identifiers.
+- Some individual recordings carry annotation defects that restrict their use,
+  for example a recording that may be trained on but must be excluded from
+  validation. These are listed in
+  [`ANNOTATION_CAVEATS.md`](ANNOTATION_CAVEATS.md).
 
 These limitations are retained explicitly so that future benchmark results can
 be interpreted against the evidence the dataset actually provides.
